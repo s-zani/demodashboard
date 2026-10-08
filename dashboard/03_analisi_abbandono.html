@@ -1,0 +1,1323 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Analisi dell'abbandono</title>
+<script>
+(function(){var h=document.documentElement;
+  if(location.hash==='#thumb'){h.classList.add('is-thumb');}
+  try{if(window.self!==window.top){h.classList.add('is-embedded');}}catch(e){h.classList.add('is-embedded');}
+})();
+</script>
+<script>
+(function(){var h=document.documentElement,t=null;
+  if(h.classList.contains('is-thumb')){t='light';}
+  else{
+    try{t=localStorage.getItem('ba-theme');}catch(e){t=null;}
+    if(t!=='light'&&t!=='dark'){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}
+  }
+  h.dataset.theme=t;
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,500&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+:root{ /* tema chiaro (default) */
+  --bg:#F3F5F8; --surface:#FCFCFD; --surface-2:#EDF0F5; --ink:#131A2A; --ink-2:#465068; --muted:#5F6A80; --line:#D8DDE6;
+  --brand:#16294D; --aurora:#D9572B; --aurora-soft:#FBE4D9; --focus:#D9572B;
+  --good:#127A3E; --bad:#B8322A; --warn:#9A6400;
+  --s1:#2463B0; --s2:#E0623A; --s3:#1A9A78; --s4:#B98314; --s5:#8A5CC4;
+  --heat-0:#FCEFE8; --heat-1:#F7CDB8; --heat-2:#EFA27F; --heat-3:#E0623A; --heat-4:#B4441F; --heat-5:#7E2E14;
+  --on-heat-lo:var(--ink); --on-heat-hi:var(--surface);
+  --font:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --bg:#0D1220; --surface:#151C2E; --surface-2:#1C2539; --ink:#EDF0F6; --ink-2:#B9C1D3; --muted:#97A0B5; --line:#2A344C;
+  --brand:#A9C1EE; --aurora:#F08A58; --aurora-soft:#3A2418; --focus:#F08A58;
+  --good:#3CC27A; --bad:#F07A6E; --warn:#E2B04A;
+  --s1:#3F84D6; --s2:#E0643A; --s3:#20A07B; --s4:#B98617; --s5:#9776D6;
+  --heat-0:#241B1A; --heat-1:#4A2A1E; --heat-2:#7A3A20; --heat-3:#B04A24; --heat-4:#E0643A; --heat-5:#F6A37F;
+  --on-heat-lo:var(--ink); --on-heat-hi:var(--bg);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:20px}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 var(--font);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+h1,h2,h3,p{margin:0}
+a{color:var(--brand)}
+
+/* ---- cromatura demo (identica) ---- */
+.dc-back,.dc-hint{position:fixed;z-index:9000;font:500 14px/1.4 "IBM Plex Sans",system-ui,sans-serif}
+.dc-back{top:12px;left:12px;padding:7px 12px;border-radius:999px;background:rgba(19,26,42,.86);color:#EDF0F6;text-decoration:none}
+.dc-back:focus-visible,.dc-hint summary:focus-visible{outline:2px solid #F08A58;outline-offset:2px}
+.dc-hint{left:12px;bottom:12px;max-width:330px;background:rgba(19,26,42,.92);color:#EDF0F6;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.dc-hint summary{cursor:pointer;list-style:none;padding:9px 14px;font-weight:600}
+.dc-hint summary::-webkit-details-marker{display:none}
+.dc-hint summary::before{content:"?";display:inline-grid;place-items:center;width:18px;height:18px;margin-right:8px;border-radius:50%;background:#F08A58;color:#131A2A;font-size:12px;font-weight:700}
+.dc-hint ul{margin:0;padding:0 16px 12px 32px}.dc-hint li{margin:5px 0;color:rgba(237,240,246,.9)}
+html.is-embedded .dc-back,html.is-thumb .dc-back,html.is-thumb .dc-hint{display:none}
+@media print{.dc-back,.dc-hint{display:none}}
+
+/* ---- header ---- */
+.ba-brand{display:inline-flex;align-items:center;gap:8px}.ba-mark{width:26px;height:26px}.ba-word{font-weight:700;letter-spacing:-.01em;color:var(--brand)}
+.hdr{background:var(--surface);border-bottom:1px solid var(--line)}
+.hdr-in{max-width:1440px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:10px 18px;flex-wrap:wrap}
+html:not(.is-embedded):not(.is-thumb) .hdr-in{padding-left:140px}
+.hdr-sep{width:1px;height:34px;background:var(--line)}
+.hdr-title{display:flex;flex-direction:column;min-width:0}
+.hdr h1{font-size:20px;font-weight:700;line-height:1.2;letter-spacing:-.01em}
+.hdr .q{color:var(--ink-2);font-size:15px;line-height:1.3}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.badge{font-size:13px;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:5px 12px;white-space:nowrap}
+
+/* ---- controlli ---- */
+.btn{font:500 14px/1.2 var(--font);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 13px;min-height:38px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn[aria-expanded="true"],.btn[aria-pressed="true"]{background:var(--surface-2);border-color:var(--ink-2)}
+.btn svg{width:17px;height:17px;flex:none}
+.ic-sun{display:none}
+:root[data-theme="dark"] .ic-sun{display:block}:root[data-theme="dark"] .ic-moon{display:none}
+select.sel{font:500 15px/1.2 var(--font);color:var(--ink);background:var(--surface);border:1px solid var(--ink-2);border-radius:8px;padding:8px 34px 8px 12px;min-height:40px;cursor:pointer;max-width:100%;
+  appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--ink-2) 50%),linear-gradient(135deg,var(--ink-2) 50%,transparent 50%);
+  background-position:calc(100% - 18px) 52%,calc(100% - 12px) 52%;background-size:6px 6px,6px 6px;background-repeat:no-repeat}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg .btn{border:0;border-radius:0;min-height:38px}
+.seg .btn+.btn{border-left:1px solid var(--line)}
+.seg .btn[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
+
+/* ---- layout ---- */
+.shell{max-width:1440px;margin:0 auto;padding:22px 24px 24px;display:grid;grid-template-columns:196px minmax(0,1fr);gap:28px}
+.toc{position:sticky;top:64px;align-self:start}
+html.is-embedded .toc,html.is-thumb .toc{top:20px}
+.toc-k{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:600;margin:4px 0 10px}
+.toc ol{list-style:none;margin:0;padding:0;border-left:2px solid var(--line);counter-reset:toc}
+.toc li{counter-increment:toc}
+.toc a{display:flex;gap:8px;padding:7px 10px 7px 12px;margin-left:-2px;border-left:2px solid transparent;color:var(--ink-2);text-decoration:none;font-size:15px;line-height:1.3}
+.toc a::before{content:counter(toc);font-variant-numeric:tabular-nums;color:var(--ink-2);min-width:12px}
+.toc a:hover{color:var(--ink)}
+.toc a[aria-current="true"]{border-left-color:var(--aurora);color:var(--ink);font-weight:600}
+main{min-width:0}
+
+.sec{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px 26px 24px;margin-bottom:22px;scroll-margin-top:20px}
+.sec-head{display:flex;gap:14px 24px;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}
+.sec-head>div:first-child{flex:1 1 520px;min-width:0}
+.sec-tools{display:flex;gap:8px;flex-wrap:wrap}
+.eyebrow{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:600;margin-bottom:6px}
+.sec h2{font-size:25px;line-height:1.25;font-weight:700;letter-spacing:-.012em;text-wrap:balance;max-width:62ch}
+.sub{color:var(--ink-2);font-size:15px;margin-top:6px;max-width:92ch}
+.note{color:var(--ink-2);font-size:14px;margin-top:10px}
+.howto{font-size:15px;color:var(--ink);background:var(--surface-2);border-radius:8px;padding:10px 14px;margin:0 0 14px}
+.howto b{font-weight:600}
+
+/* ---- 1. sintesi ---- */
+.lead-num{font-weight:700}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--line);margin-top:16px}
+.kpi{padding:16px 22px 2px 0;display:flex;flex-direction:column;min-width:0}
+.kpi+.kpi{padding-left:22px;border-left:1px solid var(--line)}
+.kpi-k{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:600}
+.kpi-v{font-size:50px;font-weight:600;line-height:1.05;letter-spacing:-.02em;margin:6px 0 8px;color:var(--ink)}
+.kpi-v .u{font-size:24px;font-weight:600;color:var(--ink-2);margin-left:6px;letter-spacing:0}
+.kpi-t{font-size:16px;line-height:1.5;color:var(--ink);max-width:46ch}
+.kpi-a{margin-top:8px;font-weight:600;font-size:15px;text-underline-offset:3px;align-self:flex-start}
+
+/* ---- grafici ---- */
+.chart{width:100%;position:relative}
+#ch-segnale{height:330px}
+#ch-scatter{height:540px}
+#ch-motivi{height:300px}
+.chart-wrap{position:relative}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:14px;color:var(--ink);margin:0 0 8px}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.dot{width:11px;height:11px;border-radius:50%;display:inline-block;flex:none}
+.dot-s1{background:var(--s1)}.dot-s2{background:var(--s2)}
+.dot-hollow{background:var(--surface);border:2.5px solid var(--ink-2)}
+.swatch-small{width:22px;height:12px;border:1.5px dashed var(--s2);border-radius:2px;display:inline-block;background:var(--surface-2)}
+
+/* ---- tabella (vista tabella) ---- */
+.tview{margin-top:14px;border-top:1px solid var(--line);padding-top:12px}
+.tv-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.tv-cap{font-size:14px;color:var(--ink-2);margin-right:auto}
+.tscroll{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:8px}
+.tscroll.tall{max-height:440px}
+table.data{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+table.data th,table.data td{padding:8px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+table.data thead th{position:sticky;top:0;background:var(--surface-2);color:var(--ink-2);font-weight:600;font-size:13px;z-index:1}
+table.data td.num,table.data th.num{text-align:right}
+table.data td.mono{font-family:var(--mono);font-size:13px}
+table.data tbody tr:last-child td{border-bottom:0}
+
+/* ---- 3. heatmap ---- */
+.heat-scroll{overflow-x:auto;max-width:100%;padding-bottom:4px}
+table.heat{border-collapse:separate;border-spacing:4px;width:100%;min-width:620px;table-layout:fixed;font-variant-numeric:tabular-nums}
+table.heat th{font-size:14px;font-weight:600;color:var(--ink);padding:4px 6px}
+table.heat thead th{text-align:center}
+table.heat tbody th{text-align:right;white-space:nowrap}
+table.heat th.corner{font-size:12px;font-weight:600;color:var(--ink-2);text-align:right;letter-spacing:.02em;line-height:1.35}
+table.heat col.c-lab{width:120px}
+table.heat .sp{width:8px;padding:0}
+.hc{height:62px;text-align:center;vertical-align:middle;border-radius:6px;padding:4px;cursor:default;line-height:1.2;outline-offset:1px}
+.hc .hv{display:block;font-size:16px;font-weight:600}
+.hc .hn{display:block;font-size:12px;font-weight:500;margin-top:2px}
+.h0{background:var(--heat-0)}.h1{background:var(--heat-1)}.h2{background:var(--heat-2)}.h3{background:var(--heat-3)}.h4{background:var(--heat-4)}.h5{background:var(--heat-5)}
+.h0,.h1,.h2,.h3{color:var(--on-heat-lo)}.h4,.h5{color:var(--on-heat-hi)}
+.hc-small{background:var(--surface-2);color:var(--ink-2);border:1.5px dashed var(--ink-2)}
+.hc-small .hv{font-size:13px;font-weight:600}
+.hc-empty{background:transparent;color:var(--muted);border:1px solid var(--line)}
+.hc-empty .hn{font-size:12px}
+.hc-tot{box-shadow:inset 0 0 0 2px var(--ink-2)}
+.hc:hover,.hc:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+.heat-axis{font-size:13px;color:var(--ink-2);font-weight:600;margin:0 0 4px 128px}
+.heat-legend{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;margin-top:14px;font-size:13px;color:var(--ink)}
+.hl-scale{display:flex;align-items:stretch;gap:2px;flex-wrap:wrap;max-width:100%}
+.hl-step{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:12px;color:var(--ink-2);min-width:52px;white-space:nowrap}
+.hl-step i{display:block;width:100%;height:14px;border-radius:2px}
+.hl-item{display:inline-flex;align-items:center;gap:7px}
+.hl-box{width:26px;height:16px;border-radius:3px;display:inline-block}
+.tip{position:fixed;z-index:8000;pointer-events:none;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:14px;line-height:1.45;max-width:300px;box-shadow:0 6px 20px color-mix(in srgb, var(--ink) 18%, transparent)}
+.tip b{font-weight:700}
+.tip .tw{color:var(--warn);font-weight:600}
+
+/* ---- 4. selezione ---- */
+.sel-grid{display:grid;grid-template-columns:minmax(0,1.65fr) minmax(300px,1fr);gap:22px;align-items:start}
+.sel-panel{background:var(--surface-2);border-radius:10px;padding:16px 18px}
+.sel-range{font-size:14px;color:var(--ink-2);margin-bottom:8px;white-space:pre-line}
+.chart-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;margin-bottom:6px}
+.chart-bar .legend{margin:0}
+.sel-big{display:flex;gap:28px;flex-wrap:wrap;margin:6px 0 4px}
+.sel-num{display:block;font-size:36px;font-weight:600;line-height:1.1;letter-spacing:-.01em}
+.sel-lab{display:block;font-size:14px;color:var(--ink-2)}
+.sel-cmp{font-size:15px;margin:6px 0 12px}
+table.mini{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums;margin-bottom:12px}
+table.mini th,table.mini td{padding:5px 4px;border-bottom:1px solid var(--line);text-align:right}
+table.mini th:first-child,table.mini td:first-child{text-align:left}
+table.mini thead th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:600}
+.mini-h{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:600;margin:6px 0 8px}
+.rbars{list-style:none;margin:0 0 12px;padding:0}
+.rbars li{display:grid;grid-template-columns:minmax(0,1fr) 84px 26px;gap:2px 10px;align-items:center;font-size:14px;line-height:1.3;margin-bottom:8px}
+.rbars .rb-l{color:var(--ink)}
+.rbars .rb-t{height:8px;background:var(--surface);border-radius:4px;overflow:hidden}
+.rbars .rb-f{height:100%;background:var(--s2);border-radius:0 4px 4px 0}
+.rbars .rb-n{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.empty-msg{font-size:15px;color:var(--ink-2);padding:6px 0 10px}
+.sel-actions{display:flex;flex-wrap:wrap;gap:8px}
+.hint-inline{font-size:14px;color:var(--ink-2);margin-top:6px}
+
+/* ---- 5. segmenta ---- */
+.filters{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;padding:12px 14px;background:var(--surface-2);border-radius:10px;margin-bottom:14px}
+.filters label{font-weight:600;font-size:15px}
+.filters .push{margin-left:auto}
+.var-desc{font-size:14px;color:var(--ink-2);margin:0 0 6px}
+.warn-t{color:var(--warn);font-weight:600}
+
+/* ---- 7. motivi ---- */
+.rcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px;margin-top:8px}
+.rcard{font:inherit;text-align:left;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px;cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.rcard:hover{background:var(--surface-2)}
+.rcard[aria-pressed="true"]{border:2px solid var(--aurora);padding:13px 15px;background:var(--surface-2)}
+.rc-t{font-weight:600;font-size:16px;line-height:1.3}
+.rc-m{font-size:14px;color:var(--ink-2);margin-bottom:8px}
+.rc-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;font-size:14px;padding:4px 0;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+.rc-row .v{font-weight:600;text-align:right}
+.rc-row .d{color:var(--ink-2);text-align:right;min-width:84px}
+.list-head{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin:22px 0 10px}
+.list-head h3{font-size:18px;font-weight:600;margin-right:auto}
+
+footer{max-width:1440px;margin:0 auto;padding:6px 24px 80px;color:var(--ink-2);font-size:14px}
+footer p+p{margin-top:4px}
+
+/* ---- responsive ---- */
+@media (max-width:1180px){ .sel-grid{grid-template-columns:minmax(0,1fr)} }
+@media (max-width:1023px){
+  html{scroll-padding-top:66px}
+  .shell{grid-template-columns:minmax(0,1fr);gap:0;padding:0 16px 20px}
+  .toc{position:sticky;top:0;z-index:50;background:var(--bg);margin:0 -16px 16px;padding:8px 16px;border-bottom:1px solid var(--line);overflow-x:auto}
+  html:not(.is-embedded):not(.is-thumb) .toc{padding-left:122px}
+  .toc-k{display:none}
+  .toc ol{display:flex;gap:6px;border:0;white-space:nowrap}
+  .toc a{border:1px solid var(--line);border-radius:999px;padding:6px 12px;margin:0;font-size:14px;background:var(--surface)}
+  .toc a[aria-current="true"]{border-color:var(--aurora);background:var(--aurora-soft);color:var(--ink)}
+  .sec{scroll-margin-top:66px}
+}
+@media (max-width:860px){
+  .kpis{grid-template-columns:minmax(0,1fr)}
+  .kpi+.kpi{padding-left:0;border-left:0;border-top:1px solid var(--line)}
+  .kpi{padding-bottom:12px}
+}
+@media (max-width:640px){
+  html:not(.is-embedded):not(.is-thumb) .hdr-in{padding-left:16px;padding-top:56px}
+  .hdr-in{padding:12px 16px}
+  .hdr-sep{display:none}
+  .hdr-right{margin-left:0;width:100%}
+  .sec{padding:18px 16px 20px;border-radius:10px}
+  .sec h2{font-size:21px}
+  .kpi-v{font-size:42px}
+  #ch-scatter{height:400px}
+  #ch-segnale{height:320px}
+  .heat-axis{margin-left:0}
+  .filters .push{margin-left:0}
+  footer{padding:6px 16px 80px}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+
+/* ---- anteprima galleria ---- */
+html.is-thumb{scroll-behavior:auto}
+html.is-thumb .sec{margin-bottom:16px}
+html.is-thumb #ch-segnale{height:300px}
+html.is-thumb .kpi-a{display:none}
+html.is-thumb .kpi-v{font-size:44px;margin:4px 0 6px}
+html.is-thumb .kpi-t{font-size:15px;max-width:none}
+html.is-thumb .kpis{margin-top:12px}
+html.is-thumb .kpi{padding-top:12px}
+html.is-thumb .sec{padding-top:18px;padding-bottom:18px}
+html.is-thumb .shell{padding-top:18px}
+@media print{.toc,.sec-tools,.btn{display:none}.sec{break-inside:avoid}}
+</style>
+</head>
+<body>
+<a class="dc-back" href="../index.html">← Galleria</a>
+<details class="dc-hint"><summary>Cosa provare</summary><ul>
+  <li>Nella sezione 5 cambia la variabile in «Confronta per»: il titolo si riscrive da solo.</li>
+  <li>Trascina un rettangolo sulla dispersione (sezione 4): il riepilogo a destra si aggiorna.</li>
+  <li>Passa il mouse sulla mappa di calore per leggere i conteggi di ogni cella.</li>
+  <li>Clicca un motivo di chiusura per vedere chi sono quei clienti.</li>
+</ul></details>
+
+<header class="hdr">
+  <div class="hdr-in">
+    <span class="ba-brand"><svg viewBox="0 0 32 32" aria-hidden="true" class="ba-mark"><path d="M6 21a10 10 0 0 1 20 0z" fill="var(--aurora)"/><rect x="3" y="23.5" width="26" height="2.6" rx="1.3" fill="var(--brand)"/></svg><span class="ba-word">Banca Aurora</span></span>
+    <span class="hdr-sep" aria-hidden="true"></span>
+    <div class="hdr-title"><h1>Analisi dell'abbandono</h1><p class="q">Perché i clienti se ne vanno?</p></div>
+    <div class="hdr-right">
+      <span class="badge" id="data-badge">Clienti_Banca_Aurora.xlsx</span>
+      <button type="button" class="btn" id="btn-theme">
+        <svg class="ic-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        <svg class="ic-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/></svg>
+        <span id="btn-theme-t">Tema scuro</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="toc" id="toc" aria-label="Sezioni della pagina">
+    <p class="toc-k">In questa pagina</p>
+    <ol>
+      <li><a href="#s-sintesi">In sintesi</a></li>
+      <li><a href="#s-segnale">Il segnale più forte</a></li>
+      <li><a href="#s-mappa">Mappa di calore</a></li>
+      <li><a href="#s-selezione">Selezione col mouse</a></li>
+      <li><a href="#s-segmenta">Segmenta per variabile</a></li>
+      <li><a href="#s-leve">Le leve che contano</a></li>
+      <li><a href="#s-voce">La voce dei clienti</a></li>
+    </ol>
+  </nav>
+
+  <main id="main">
+    <!-- 1 -->
+    <section class="sec" id="s-sintesi" aria-labelledby="t-sintesi">
+      <p class="eyebrow">1 · In sintesi</p>
+      <h2 id="t-sintesi">Calcolo in corso…</h2>
+      <p class="sub" id="sub-sintesi"></p>
+      <div class="kpis">
+        <article class="kpi" aria-labelledby="k1-k">
+          <p class="kpi-k" id="k1-k">Pochi pagamenti con la carta</p>
+          <p class="kpi-v" id="k1-v">—</p>
+          <p class="kpi-t" id="k1-t"></p>
+          <a class="kpi-a" id="k1-a" href="#s-segnale">Vedi fascia per fascia</a>
+        </article>
+        <article class="kpi" aria-labelledby="k2-k">
+          <p class="kpi-k" id="k2-k">Mesi senza usare la carta</p>
+          <p class="kpi-v" id="k2-v">—</p>
+          <p class="kpi-t" id="k2-t"></p>
+          <a class="kpi-a" id="k2-a" href="#s-mappa">Vedi la mappa di calore</a>
+        </article>
+        <article class="kpi" aria-labelledby="k3-k">
+          <p class="kpi-k" id="k3-k">Carta mai usata a rate</p>
+          <p class="kpi-v" id="k3-v">—</p>
+          <p class="kpi-t" id="k3-t"></p>
+          <a class="kpi-a" id="k3-a" href="#s-segmenta" data-var="revolving">Confronta per saldo a rate</a>
+        </article>
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section class="sec" id="s-segnale" aria-labelledby="t-segnale">
+      <div class="sec-head">
+        <div>
+          <p class="eyebrow">2 · Il segnale più forte</p>
+          <h2 id="t-segnale">—</h2>
+          <p class="sub" id="sub-segnale"></p>
+        </div>
+        <div class="sec-tools"><button type="button" class="btn" id="tv-segnale-btn" aria-expanded="false" aria-controls="tv-segnale">Vista tabella</button></div>
+      </div>
+      <div class="chart" id="ch-segnale" role="img" aria-label="Grafico a colonne del tasso di abbandono per fascia di transazioni"></div>
+      <div class="tview" id="tv-segnale" hidden></div>
+    </section>
+
+    <!-- 3 -->
+    <section class="sec" id="s-mappa" aria-labelledby="t-mappa">
+      <div class="sec-head">
+        <div>
+          <p class="eyebrow">3 · Mappa di calore: contatti × inattività</p>
+          <h2 id="t-mappa">—</h2>
+          <p class="sub" id="sub-mappa"></p>
+        </div>
+        <div class="sec-tools"><button type="button" class="btn" id="tv-mappa-btn" aria-expanded="false" aria-controls="tv-mappa">Vista tabella</button></div>
+      </div>
+      <p class="heat-axis">Mesi senza usare la carta (ultimi 12) →</p>
+      <div class="heat-scroll"><table class="heat" id="heat" aria-describedby="sub-mappa"></table></div>
+      <div class="heat-legend" id="heat-legend" aria-label="Legenda della scala di colori"></div>
+      <div class="tview" id="tv-mappa" hidden></div>
+    </section>
+
+    <!-- 4 -->
+    <section class="sec" id="s-selezione" aria-labelledby="t-selezione">
+      <div class="sec-head">
+        <div>
+          <p class="eyebrow">4 · Selezione col mouse</p>
+          <h2 id="t-selezione">—</h2>
+          <p class="sub" id="sub-selezione"></p>
+        </div>
+      </div>
+      <div class="sel-grid">
+        <div>
+          <div class="chart-bar">
+            <p class="legend" aria-hidden="true"><span><i class="dot dot-s1"></i>Attivi</span><span><i class="dot dot-s2"></i>Chiusi</span></p>
+            <div class="sel-actions">
+              <button type="button" class="btn" id="btn-sel-esempio">Ripristina esempio</button>
+              <button type="button" class="btn" id="btn-sel-clear">Cancella selezione</button>
+              <button type="button" class="btn" id="tv-sel-btn" aria-expanded="false" aria-controls="tv-sel">Vista tabella</button>
+            </div>
+          </div>
+          <div class="chart" id="ch-scatter" role="img" aria-label="Dispersione dei clienti: transazioni in 12 mesi sull'asse orizzontale, spesa in 12 mesi su quello verticale"></div>
+          <p class="hint-inline">Trascina sul grafico per disegnare un rettangolo. Puoi spostarlo o ridimensionarlo trascinandone i bordi.</p>
+        </div>
+        <aside class="sel-panel" id="sel-panel" aria-labelledby="sel-h">
+          <p class="eyebrow" id="sel-h">Gruppo selezionato</p>
+          <p class="sel-range" id="sel-range"></p>
+          <div id="sel-body">
+            <div class="sel-big">
+              <div><span class="sel-num" id="sel-n">—</span><span class="sel-lab">clienti</span></div>
+              <div><span class="sel-num" id="sel-rate">—</span><span class="sel-lab">ha chiuso</span></div>
+            </div>
+            <p class="sel-cmp" id="sel-cmp" aria-live="polite"></p>
+            <table class="mini" id="sel-means">
+              <thead><tr><th scope="col">Media</th><th scope="col">Gruppo</th><th scope="col">Tutti</th></tr></thead>
+              <tbody id="sel-means-b"></tbody>
+            </table>
+            <p class="mini-h">Motivi di chiusura nel gruppo</p>
+            <ul class="rbars" id="sel-reasons"></ul>
+          </div>
+          <p class="empty-msg" id="sel-empty" hidden>Nessun gruppo selezionato. Trascina un rettangolo sul grafico, oppure ripristina l'esempio.</p>
+        </aside>
+      </div>
+      <div class="tview" id="tv-sel" hidden></div>
+    </section>
+
+    <!-- 5 -->
+    <section class="sec" id="s-segmenta" aria-labelledby="t-segmenta">
+      <p class="eyebrow">5 · Segmenta per qualsiasi variabile</p>
+      <h2 id="t-segmenta" aria-live="polite">—</h2>
+      <p class="sub">Scegli una variabile: ogni barra è un gruppo di clienti e mostra quanti di loro hanno chiuso la carta. Le variabili numeriche sono raggruppate in fasce.</p>
+      <div class="filters" role="group" aria-label="Opzioni del confronto" style="margin-top:14px">
+        <label for="sel-var">Confronta per</label>
+        <select class="sel" id="sel-var"></select>
+        <div class="seg" role="group" aria-label="Ordine delle barre">
+          <button type="button" class="btn" id="sort-rate" aria-pressed="true">Per tasso</button>
+          <button type="button" class="btn" id="sort-nat" aria-pressed="false">Ordine naturale</button>
+        </div>
+        <button type="button" class="btn push" id="tv-segmenta-btn" aria-expanded="false" aria-controls="tv-segmenta">Vista tabella</button>
+      </div>
+      <p class="var-desc" id="var-desc"></p>
+      <p class="legend" aria-hidden="true"><span><i class="dot dot-s2"></i>Tasso di abbandono del gruppo</span><span><i class="swatch-small"></i><span id="lg-small">Campione piccolo: da leggere con cautela</span></span></p>
+      <div class="chart" id="ch-seg" role="img" aria-label="Barre orizzontali del tasso di abbandono per gruppo"></div>
+      <p class="note" id="seg-note"></p>
+      <div class="tview" id="tv-segmenta" hidden></div>
+    </section>
+
+    <!-- 6 -->
+    <section class="sec" id="s-leve" aria-labelledby="t-leve">
+      <div class="sec-head">
+        <div>
+          <p class="eyebrow">6 · Quali leve contano di più</p>
+          <h2 id="t-leve">—</h2>
+          <p class="sub" id="sub-leve"></p>
+        </div>
+        <div class="sec-tools"><button type="button" class="btn" id="tv-leve-btn" aria-expanded="false" aria-controls="tv-leve">Vista tabella</button></div>
+      </div>
+      <p class="howto" id="howto-leve"></p>
+      <p class="legend" aria-hidden="true"><span><i class="dot dot-hollow"></i>Fascia dove si chiude meno</span><span><i class="dot dot-s2"></i>Fascia dove si chiude di più</span></p>
+      <div class="chart" id="ch-leve" role="img" aria-label="Grafico a manubrio: per ogni variabile, tasso di abbandono più basso e più alto tra le sue fasce"></div>
+      <p class="note" id="note-leve"></p>
+      <div class="tview" id="tv-leve" hidden></div>
+    </section>
+
+    <!-- 7 -->
+    <section class="sec" id="s-voce" aria-labelledby="t-voce">
+      <div class="sec-head">
+        <div>
+          <p class="eyebrow">7 · La voce dei clienti</p>
+          <h2 id="t-voce">—</h2>
+          <p class="sub" id="sub-voce"></p>
+        </div>
+        <div class="sec-tools"><button type="button" class="btn" id="tv-voce-btn" aria-expanded="false" aria-controls="tv-voce">Vista tabella</button></div>
+      </div>
+      <div class="chart" id="ch-motivi" role="img" aria-label="Barre orizzontali: numero di chiusure per motivo"></div>
+      <div class="tview" id="tv-voce" hidden></div>
+      <div class="rcards" id="rcards" role="group" aria-label="Schede dei motivi di chiusura"></div>
+      <p class="note" id="rc-note"></p>
+      <div class="list-head">
+        <h3 id="list-title">—</h3>
+        <button type="button" class="btn" id="list-copia">Copia</button>
+        <button type="button" class="btn" id="list-csv">Scarica CSV</button>
+      </div>
+      <div class="tscroll tall"><table class="data" id="list-table"></table></div>
+    </section>
+  </main>
+</div>
+
+<footer>
+  <p>Banca Aurora è una banca inventata. Dati di fantasia a scopo dimostrativo.</p>
+  <p id="foot-src">Fonte: Clienti_Banca_Aurora.xlsx</p>
+</footer>
+<div class="tip" id="tip" role="tooltip" hidden></div>
+
+<script src="../data/clienti_banca_aurora.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+
+<script id="calc">
+/* Calcoli puri (nessun DOM): tutto ciò che la pagina mostra parte da qui. */
+(function(){
+"use strict";
+var D = window.BANCA_AURORA, R = D.righe;
+var SMALL_SEG = 15;   /* sotto questa soglia un gruppo è "campione piccolo" */
+var SMALL_HEAT = 5;   /* nella mappa di calore: sotto 5 clienti = "poco dati" */
+var MIN_N_LEVE = 15;  /* nel grafico a manubrio contano solo fasce con almeno 15 clienti */
+var HOT_MIN_N = 10;   /* cella "più calda" citata nel titolo: almeno 10 clienti */
+var EXAMPLE = {x0:30, x1:60, y0:2000, y1:3200}; /* selezione d'esempio: la "zona rossa" */
+var TRANS_CUT = {lo:60, hi:75};                 /* confronto della sintesi */
+var HEAT_STEPS = [0.05, 0.10, 0.20, 0.30, 0.50];
+
+function isC(r){ return r.stato === "Chiuso"; }
+function campo(k){ for (var i=0;i<D.campi.length;i++){ if (D.campi[i].chiave===k) return D.campi[i]; } return {}; }
+function stats(rows){ var c=0; for (var i=0;i<rows.length;i++){ if (isC(rows[i])) c++; } return {n:rows.length, c:c, rate: rows.length ? c/rows.length : null}; }
+function mean(rows,k){ if (!rows.length) return null; var s=0; for (var i=0;i<rows.length;i++) s+=rows[i][k]; return s/rows.length; }
+
+/* ---- formati italiani ---- */
+var _nf = {};
+function nf(d){
+  if (!(d in _nf)){
+    var f=null;
+    try { f=new Intl.NumberFormat("it-IT",{minimumFractionDigits:d,maximumFractionDigits:d,useGrouping:"always"}); if (f.format(4569).indexOf(".")<0) f=null; } catch(e){ f=null; }
+    _nf[d]=f;
+  }
+  return _nf[d];
+}
+function num(x,d){
+  d=d||0; if (x==null || !isFinite(x)) return "—";
+  var f=nf(d); if (f) return f.format(x);
+  var s=Math.abs(x).toFixed(d).split("."); s[0]=s[0].replace(/\B(?=(\d{3})+(?!\d))/g,".");
+  return (x<0?"-":"")+s.join(",");
+}
+function pct(x,d){ return x==null ? "—" : num(x*100, d==null?1:d)+"%"; }
+function eur(x){ return x==null ? "—" : num(x,0)+" €"; }
+/* articolo/preposizione davanti a un numero: il 33%, l'8%, lo 0,7% */
+function art(s, base){
+  var ip = String(s).replace(/[^\d,]/g,"").split(",")[0], n = +ip;
+  var el = (n===1||n===8||n===11||(n>=80&&n<=89)||(n>=800&&n<=899));
+  var F = {il:["il ","l'","lo "], nel:["nel ","nell'","nello "], al:["al ","all'","allo "], dal:["dal ","dall'","dallo "], del:["del ","dell'","dello "]}[base||"il"];
+  return (n===0 && ip!=="" ? F[2] : el ? F[1] : F[0]) + s;
+}
+function plur(n,s,p){ return n===1 ? s : p; }
+function volte(x){ return x>=9.5 ? num(Math.round(x),0) : num(x,1); }
+
+/* ---- variabili per "Confronta per" e per il manubrio ---- */
+function intVar(k,label,group,s,p){
+  var vals=[]; R.forEach(function(r){ if (vals.indexOf(r[k])<0) vals.push(r[k]); }); vals.sort(function(a,b){return a-b;});
+  return {k:k,label:label,group:group,kind:"int",unitS:s,unitP:p,cats:vals.map(function(v,i){ return {key:String(v),label:v+" "+plur(v,s,p),nat:i,val:v,test:function(r){return r[k]===v;}}; })};
+}
+function binVar(k,label,group,bins){
+  return {k:k,label:label,group:group,kind:"bin",cats:bins.map(function(b,i){ return {key:b[2],label:b[2],nat:i,lo:b[0],hi:b[1],test:function(r){ return (b[0]==null||r[k]>=b[0]) && (b[1]==null||r[k]<b[1]); }}; })};
+}
+function catVar(k,label,group,map){
+  var ord=(campo(k).ordine||[]).slice();
+  R.forEach(function(r){ if (r[k]!=null && ord.indexOf(r[k])<0) ord.push(r[k]); });
+  return {k:k,label:label,group:group,kind:"cat",cats:ord.map(function(v,i){ return {key:v,label:(map&&map[v])||v,nat:i,test:function(r){return r[k]===v;}}; })};
+}
+var G1="Uso della carta", G2="Rapporto con la banca", G3="Profilo del cliente";
+var VARS=[
+  binVar("n_trans_12m","Transazioni 12 mesi",G1,[[null,31,"≤30"],[31,46,"31–45"],[46,61,"46–60"],[61,76,"61–75"],[76,91,"76–90"],[91,null,">90"]]),
+  binVar("importo_12m","Spesa 12 mesi",G1,[[null,2000,"meno di 2.000 €"],[2000,3000,"2.000–2.999 €"],[3000,4000,"3.000–3.999 €"],[4000,5000,"4.000–4.999 €"],[5000,10000,"5.000–9.999 €"],[10000,null,"10.000 € e oltre"]]),
+  intVar("mesi_inattivi","Mesi inattivi",G1,"mese","mesi"),
+  binVar("utilizzo","Utilizzo carta",G1,[[null,1e-9,"0%"],[1e-9,0.25,"fino al 25%"],[0.25,0.5,"25–50%"],[0.5,0.75,"50–75%"],[0.75,null,"75% e oltre"]]),
+  binVar("revolving","Saldo a rate",G1,[[null,1,"0 € (mai a rate)"],[1,1001,"1–1.000 €"],[1001,2001,"1.001–2.000 €"],[2001,null,"oltre 2.000 €"]]),
+  binVar("limite","Limite di credito",G1,[[null,2500,"meno di 2.500 €"],[2500,5000,"2.500–4.999 €"],[5000,10000,"5.000–9.999 €"],[10000,20000,"10.000–19.999 €"],[20000,null,"20.000 € e oltre"]]),
+  intVar("prodotti","Prodotti attivi",G2,"prodotto","prodotti"),
+  intVar("contatti","Contatti assistenza",G2,"contatto","contatti"),
+  binVar("mesi_cliente","Mesi da cliente",G2,[[null,25,"fino a 24 mesi"],[25,37,"25–36 mesi"],[37,49,"37–48 mesi"],[49,null,"oltre 48 mesi"]]),
+  catVar("carta","Tipo carta",G2),
+  binVar("eta","Età",G3,[[null,36,"fino a 35 anni"],[36,46,"36–45 anni"],[46,56,"46–55 anni"],[56,null,"oltre 55 anni"]]),
+  catVar("genere","Genere",G3,{F:"Donne",M:"Uomini"}),
+  intVar("carico","Persone a carico",G3,"persona","persone"),
+  catVar("studio","Titolo di studio",G3),
+  catVar("civile","Stato civile",G3),
+  catVar("reddito","Fascia di reddito",G3)
+];
+VARS.forEach(function(v){ var f=campo(v.k); v.colonna=f.colonna||v.label; v.desc=f.descrizione||""; v.suffix=""; });
+varBy("n_trans_12m").suffix=" transazioni";
+function catName(v,c){ return c.label+(v.suffix||""); }
+function varBy(k){ for (var i=0;i<VARS.length;i++){ if (VARS[i].k===k) return VARS[i]; } return null; }
+function segment(v){
+  return v.cats.map(function(c){ var rows=R.filter(c.test), s=stats(rows); return {key:c.key,label:c.label,nat:c.nat,val:c.val,n:s.n,c:s.c,rate:s.rate,small:s.n>0&&s.n<SMALL_SEG}; });
+}
+function extremes(list){
+  var lo=null, hi=null;
+  list.forEach(function(c){ if (lo===null || c.rate<lo.rate) lo=c; if (hi===null || c.rate>hi.rate) hi=c; });
+  return {lo:lo, hi:hi};
+}
+function segTitle(v, segs, all){
+  var el=segs.filter(function(c){ return c.n>=SMALL_SEG; });
+  if (el.length<2) return v.label+": gruppi troppo piccoli per un confronto affidabile";
+  var e=extremes(el), ratio=e.hi.rate/all.rate;
+  if (e.hi.rate-e.lo.rate < 0.05) return "Per «"+v.label+"» le differenze sono piccole: "+art(pct(e.lo.rate),"dal")+" "+art(pct(e.hi.rate),"al");
+  var smallHigher=segs.some(function(c){ return c.small && c.rate>e.hi.rate; });
+  var t=(smallHigher ? "Tra i gruppi con almeno "+SMALL_SEG+" clienti, il più a rischio è «" : "Il gruppo più a rischio è «")+catName(v,e.hi)+"»: chiude "+art(pct(e.hi.rate),"il");
+  if (ratio>=1.25) t+=", "+volte(ratio)+" volte la media";
+  return t;
+}
+
+/* ---- confronti della sintesi ---- */
+function insights(){
+  var all=stats(R);
+  var lo=stats(R.filter(function(r){return r.n_trans_12m<=TRANS_CUT.lo;}));
+  var hi=stats(R.filter(function(r){return r.n_trans_12m>TRANS_CUT.hi;}));
+  var mi=segment(varBy("mesi_inattivi")), miOk=mi.filter(function(c){return c.n>=SMALL_SEG;}), e=extremes(miOk);
+  var beyond=stats(R.filter(function(r){return r.mesi_inattivi>e.hi.val;}));
+  var rz=stats(R.filter(function(r){return r.revolving===0;})), rp=stats(R.filter(function(r){return r.revolving>0;}));
+  return {all:all,
+    trans:{lo:lo,hi:hi,ratio:hi.rate>0?lo.rate/hi.rate:null,cut:TRANS_CUT},
+    inatt:{top:e.hi,base:e.lo,beyond:beyond},
+    rev:{zero:rz,pos:rp,ratio:rp.rate>0?rz.rate/rp.rate:null}};
+}
+
+/* ---- mappa di calore ---- */
+function range(k){ var a=Infinity,b=-Infinity; R.forEach(function(r){ if(r[k]<a)a=r[k]; if(r[k]>b)b=r[k]; }); var out=[]; for (var i=a;i<=b;i++) out.push(i); return out; }
+function heat(){
+  var rows=range("contatti"), cols=range("mesi_inattivi");
+  var grid=rows.map(function(a){ return cols.map(function(b){ return stats(R.filter(function(r){return r.contatti===a&&r.mesi_inattivi===b;})); }); });
+  return {rows:rows, cols:cols, grid:grid,
+    rowTot:rows.map(function(a){ return stats(R.filter(function(r){return r.contatti===a;})); }),
+    colTot:cols.map(function(b){ return stats(R.filter(function(r){return r.mesi_inattivi===b;})); }),
+    all:stats(R)};
+}
+function heatBin(rate){ var i=0; while (i<HEAT_STEPS.length && rate>=HEAT_STEPS[i]) i++; return i; }
+function heatSummary(H){
+  function marg(tots, vals){ var l=tots.map(function(s,i){ return {n:s.n,c:s.c,rate:s.rate,val:vals[i]}; }).filter(function(s){return s.n>=MIN_N_LEVE;}); return extremes(l); }
+  var mc=marg(H.colTot,H.cols), mr=marg(H.rowTot,H.rows);
+  var hot=null;
+  H.grid.forEach(function(row,i){ row.forEach(function(s,j){ if (s.n>=HOT_MIN_N && (hot===null || s.rate>hot.rate)) hot={rate:s.rate,n:s.n,c:s.c,contatti:H.rows[i],mesi:H.cols[j]}; }); });
+  return {cols:mc, rows:mr, hot:hot, colSpread:mc.hi.rate-mc.lo.rate, rowSpread:mr.hi.rate-mr.lo.rate};
+}
+
+/* ---- manubrio: fascia più alta e più bassa per variabile ---- */
+function spreads(){
+  return VARS.map(function(v){
+    var seg=segment(v), ok=seg.filter(function(c){return c.n>=MIN_N_LEVE;});
+    if (ok.length<2) return null;
+    var e=extremes(ok);
+    return {v:v, lo:e.lo, hi:e.hi, spread:e.hi.rate-e.lo.rate, skipped:seg.filter(function(c){return c.n>0&&c.n<MIN_N_LEVE;})};
+  }).filter(Boolean).sort(function(a,b){ return b.spread-a.spread; });
+}
+
+/* ---- selezione rettangolare ---- */
+function select(b){
+  if (!b) return null;
+  var rows=R.filter(function(r){ return r.n_trans_12m>=b.x0 && r.n_trans_12m<=b.x1 && r.importo_12m>=b.y0 && r.importo_12m<=b.y1; });
+  var s=stats(rows), closed=rows.filter(isC), mot={};
+  closed.forEach(function(r){ mot[r.motivo]=(mot[r.motivo]||0)+1; });
+  var order=(campo("motivo").ordine||[]).slice(); Object.keys(mot).forEach(function(m){ if (order.indexOf(m)<0) order.push(m); });
+  return {rows:rows, n:s.n, c:s.c, rate:s.rate, means:MEAN_KEYS.map(function(m){ return {k:m.k,label:m.label,f:m.f,g:mean(rows,m.k),all:mean(R,m.k)}; }),
+    reasons:order.filter(function(m){return mot[m];}).map(function(m){ return {motivo:m,n:mot[m]}; }).sort(function(a,b){return b.n-a.n;})};
+}
+var MEAN_KEYS=[
+  {k:"n_trans_12m",label:"Transazioni 12 mesi",f:"d1"},
+  {k:"importo_12m",label:"Spesa 12 mesi",f:"eur"},
+  {k:"mesi_inattivi",label:"Mesi inattivi",f:"d2"},
+  {k:"contatti",label:"Contatti assistenza",f:"d2"},
+  {k:"prodotti",label:"Prodotti attivi",f:"d2"},
+  {k:"utilizzo",label:"Utilizzo carta",f:"pct0"},
+  {k:"eta",label:"Età",f:"d1"}
+];
+
+/* ---- motivi di chiusura ---- */
+function reasons(){
+  var closed=R.filter(isC), att=R.filter(function(r){return !isC(r);});
+  var keys=["contatti","n_trans_12m","utilizzo"];
+  function m(rows){ var o={}; keys.forEach(function(k){ o[k]=mean(rows,k); }); return o; }
+  var order=(campo("motivo").ordine||[]).slice(); closed.forEach(function(r){ if (order.indexOf(r.motivo)<0) order.push(r.motivo); });
+  var list=order.map(function(mo){ var rows=closed.filter(function(r){return r.motivo===mo;}); return {motivo:mo,n:rows.length,share:closed.length?rows.length/closed.length:null,rows:rows,m:m(rows)}; })
+    .filter(function(x){return x.n>0;}).sort(function(a,b){return b.n-a.n;});
+  return {total:closed.length, closed:closed, closedM:m(closed), att:att, attM:m(att), list:list,
+    attFull:{n_trans_12m:mean(att,"n_trans_12m"),importo_12m:mean(att,"importo_12m"),mesi_inattivi:mean(att,"mesi_inattivi"),contatti:mean(att,"contatti"),prodotti:mean(att,"prodotti")},
+    closedFull:{n_trans_12m:mean(closed,"n_trans_12m"),importo_12m:mean(closed,"importo_12m"),mesi_inattivi:mean(closed,"mesi_inattivi"),contatti:mean(closed,"contatti"),prodotti:mean(closed,"prodotti")}};
+}
+
+window.CALC = {D:D, R:R, SMALL_SEG:SMALL_SEG, SMALL_HEAT:SMALL_HEAT, MIN_N_LEVE:MIN_N_LEVE, HOT_MIN_N:HOT_MIN_N, EXAMPLE:EXAMPLE, HEAT_STEPS:HEAT_STEPS,
+  isC:isC, campo:campo, catName:catName, stats:stats, mean:mean, num:num, pct:pct, eur:eur, art:art, plur:plur, volte:volte,
+  VARS:VARS, varBy:varBy, segment:segment, extremes:extremes, segTitle:segTitle, insights:insights,
+  heat:heat, heatBin:heatBin, heatSummary:heatSummary, spreads:spreads, select:select, MEAN_KEYS:MEAN_KEYS, reasons:reasons};
+})();
+</script>
+
+<script id="ui">
+(function(){
+"use strict";
+var C = window.CALC, D = C.D, R = C.R;
+var H = document.documentElement;
+var THUMB = H.classList.contains("is-thumb");
+var RM = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+var ANIM = !(THUMB || RM);
+var FONT = '"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif';
+var ALL = C.stats(R);
+var num = C.num, pct = C.pct, eur = C.eur, art = C.art;
+
+function $(id){ return document.getElementById(id); }
+function chiusi(c){ return num(c)+" "+C.plur(c,"chiuso","chiusi"); }
+function el(tag, cls, text){ var e=document.createElement(tag); if (cls) e.className=cls; if (text!=null) e.textContent=text; return e; }
+function esc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function tok(){
+  var cs=getComputedStyle(H), g=function(n){ return cs.getPropertyValue("--"+n).trim(); };
+  return {ink:g("ink"),ink2:g("ink-2"),muted:g("muted"),line:g("line"),surface:g("surface"),surface2:g("surface-2"),bg:g("bg"),
+    s1:g("s1"),s2:g("s2"),aurora:g("aurora"),warn:g("warn"),brand:g("brand")};
+}
+function rgba(hex,a){
+  var h=hex.replace("#",""); if (h.length===3) h=h.split("").map(function(x){return x+x;}).join("");
+  var n=parseInt(h,16); return "rgba("+((n>>16)&255)+","+((n>>8)&255)+","+(n&255)+","+a+")";
+}
+function fmtBy(f, v){
+  if (v==null) return "—";
+  switch(f){
+    case "int": return num(v,0);
+    case "d1": return num(v,1);
+    case "d2": return num(v,2);
+    case "pct": return pct(v,1);
+    case "pct0": return pct(v,0);
+    case "eur": return eur(v);
+    default: return String(v);
+  }
+}
+
+/* ---------- esportazioni ---------- */
+function csvRaw(f, v){
+  if (v==null || v==="") return "";
+  if (f==="pct" || f==="pct0") return (v*100).toFixed(1).replace(".",",");
+  if (f==="d1") return v.toFixed(1).replace(".",",");
+  if (f==="d2") return v.toFixed(2).replace(".",",");
+  if (f==="int" || f==="eur") return String(Math.round(v));
+  return String(v);
+}
+function csvHead(c){ return c.h + ((c.f==="pct"||c.f==="pct0") ? " (%)" : c.f==="eur" ? " (€)" : ""); }
+function matrix(d){ return [d.cols.map(csvHead)].concat(d.rows.map(function(r){ return r.map(function(v,i){ return csvRaw(d.cols[i].f, v); }); })); }
+function toCSV(d){
+  var q=function(s){ s=String(s); return /[;"\r\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
+  return "﻿"+matrix(d).map(function(r){ return r.map(q).join(";"); }).join("\r\n");
+}
+function toTSV(d){ return matrix(d).map(function(r){ return r.map(function(s){ return String(s).replace(/[\t\r\n]+/g," "); }).join("\t"); }).join("\n"); }
+function download(name, text){
+  var blob=new Blob([text],{type:"text/csv;charset=utf-8"}), url=URL.createObjectURL(blob), a=document.createElement("a");
+  a.href=url; a.download=name; a.style.display="none"; document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); }, 800);
+}
+function flash(btn, msg){
+  var old=btn.getAttribute("data-label") || btn.textContent; btn.setAttribute("data-label", old);
+  btn.textContent=msg; clearTimeout(btn._t); btn._t=setTimeout(function(){ btn.textContent=old; }, 1600);
+}
+function copyText(text, btn){
+  function fallback(){
+    var ta=document.createElement("textarea"); ta.value=text; ta.setAttribute("readonly",""); ta.style.position="fixed"; ta.style.top="0"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.select(); var ok=false; try { ok=document.execCommand("copy"); } catch(e){ ok=false; } ta.remove();
+    flash(btn, ok ? "Copiato" : "Copia non riuscita");
+  }
+  try {
+    if (navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(text).then(function(){ flash(btn,"Copiato"); }, fallback); }
+    else fallback();
+  } catch(e){ fallback(); }
+}
+function buildTable(table, d){
+  table.textContent="";
+  var thead=el("thead"), tr=el("tr");
+  d.cols.forEach(function(c){ var th=el("th", c.f && c.f!=="text" && c.f!=="id" ? "num" : "", c.h); th.scope="col"; tr.appendChild(th); });
+  thead.appendChild(tr); table.appendChild(thead);
+  var tb=el("tbody");
+  d.rows.forEach(function(r){
+    var tr2=el("tr");
+    r.forEach(function(v,i){
+      var f=d.cols[i].f, td=el("td", f==="id" ? "mono" : (f && f!=="text") ? "num" : "");
+      td.textContent = (d.cols[i].show ? d.cols[i].show(v, r) : fmtBy(f, v));
+      tr2.appendChild(td);
+    });
+    tb.appendChild(tr2);
+  });
+  table.appendChild(tb);
+}
+var TV = {};
+function setupTV(key, getData){
+  var btn=$("tv-"+key+"-btn"), box=$("tv-"+key), tv={open:false};
+  function fill(){
+    var d=getData(); box.textContent="";
+    var bar=el("div","tv-bar"); bar.appendChild(el("p","tv-cap", d.caption||""));
+    var bc=el("button","btn","Copia"); bc.type="button"; bc.id="tv-"+key+"-copia";
+    var bd=el("button","btn","Scarica CSV"); bd.type="button"; bd.id="tv-"+key+"-csv";
+    bc.addEventListener("click", function(){ copyText(toTSV(getData()), bc); });
+    bd.addEventListener("click", function(){ var g=getData(); download(g.file, toCSV(g)); });
+    bar.appendChild(bc); bar.appendChild(bd); box.appendChild(bar);
+    var wrap=el("div","tscroll"+(d.rows.length>12?" tall":"")), t=el("table","data"); buildTable(t,d); wrap.appendChild(t); box.appendChild(wrap);
+  }
+  btn.addEventListener("click", function(){
+    tv.open=!tv.open; btn.setAttribute("aria-expanded", String(tv.open)); box.hidden=!tv.open; if (tv.open) fill();
+  });
+  tv.refresh=function(){ if (tv.open) fill(); };
+  TV[key]=tv; return tv;
+}
+
+/* ---------- grafici ---------- */
+var charts=[];
+function bp(w){ return w<560 ? "s" : w<860 ? "m" : "l"; }
+function makeChart(id, render){
+  var node=$(id), inst=echarts.init(node, null, {renderer:"svg"}), c={id:id,node:node,inst:inst,render:render,w:node.clientWidth};
+  charts.push(c);
+  if (window.ResizeObserver){
+    var raf=0;
+    new ResizeObserver(function(){
+      cancelAnimationFrame(raf);
+      raf=requestAnimationFrame(function(){
+        var w=node.clientWidth, changed=bp(w)!==bp(c.w); c.w=w; inst.resize();
+        if (changed) c.render(c);
+        if (c.afterResize) c.afterResize();
+      });
+    }).observe(node);
+  }
+  render(c);
+  return c;
+}
+function renderAll(){ charts.forEach(function(c){ c.render(c); }); }
+function tipOpt(t, fmt){
+  return {show:!THUMB, trigger:"item", confine:true, backgroundColor:t.surface, borderColor:t.line, borderWidth:1, padding:[8,12],
+    textStyle:{color:t.ink, fontSize:14, fontFamily:FONT}, extraCssText:"border-radius:8px;line-height:1.5;", formatter:fmt};
+}
+function base(t){ return {animation:ANIM, animationDuration:450, backgroundColor:"transparent", textStyle:{fontFamily:FONT, color:t.ink2, fontSize:13}}; }
+function valAxis(t, extra){
+  var a={type:"value", axisLine:{show:false}, axisTick:{show:false}, axisLabel:{color:t.ink2, fontSize:13, fontFamily:FONT}, splitLine:{lineStyle:{color:t.line, width:1, type:"solid"}}};
+  for (var k in extra) a[k]=extra[k]; return a;
+}
+function meanLine(t, axis, value, pos){
+  var d={}; d[axis]=value;
+  return {silent:true, symbol:"none", lineStyle:{color:t.ink2, type:"dashed", width:1.5},
+    label:{formatter:"media "+pct(value), position:pos||"insideEndTop", color:t.ink, fontSize:13, fontFamily:FONT, fontWeight:500}, data:[d]};
+}
+
+/* ---------- 1. sintesi ---------- */
+function setKpi(id, big, unit, text){
+  var v=$(id+"-v"); v.textContent=big; if (unit){ var u=el("span","u",unit); v.appendChild(u); }
+  $(id+"-t").textContent=text;
+}
+function renderSintesi(){
+  var I=C.insights(), a=I.all;
+  $("t-sintesi").textContent = "Un cliente su "+num(Math.round(1/a.rate))+" ha chiuso la carta: "+num(a.c)+" su "+num(a.n)+", "+art(pct(a.rate),"il");
+  $("sub-sintesi").textContent = "I tre segnali più netti nei dati. Ogni numero è calcolato in pagina sui "+num(a.n)+" clienti del file.";
+  var T=I.trans, hiTxt;
+  if (T.hi.c===0) hiTxt="Chi ne fa più di "+T.cut.hi+" non ha mai chiuso: 0 clienti su "+num(T.hi.n)+".";
+  else if (T.hi.rate<0.02) hiTxt="Chi ne fa più di "+T.cut.hi+" quasi mai: "+num(T.hi.c)+" "+C.plur(T.hi.c,"cliente","clienti")+" su "+num(T.hi.n)+".";
+  else hiTxt="Chi ne fa più di "+T.cut.hi+" chiude "+art(pct(T.hi.rate),"nel")+" dei casi ("+num(T.hi.c)+" su "+num(T.hi.n)+").";
+  setKpi("k1", pct(T.lo.rate), "", "Chi fa fino a "+T.cut.lo+" pagamenti l'anno chiude 1 volta su "+num(Math.round(1/T.lo.rate))+". "+hiTxt);
+  var M=I.inatt, mt="Con "+M.top.val+" mesi di inattività su 12 l'abbandono sale "+art(pct(M.top.rate),"al")+" ("+num(M.top.n)+" clienti). Con "+
+    M.base.val+" "+C.plur(M.base.val,"mese","mesi")+" è "+art(pct(M.base.rate),"al")+".";
+  if (M.beyond.n>0) mt+=" Oltre i "+M.top.val+" mesi i clienti sono troppo pochi per giudicare ("+num(M.beyond.n)+").";
+  setKpi("k2", pct(M.top.rate), "", mt);
+  var V=I.rev;
+  setKpi("k3", pct(V.zero.rate), "", "Chi non usa mai la carta a rate (saldo revolving 0\u00a0€) chiude "+art(pct(V.zero.rate),"nel")+" dei casi"+
+    (V.ratio!=null ? ": "+C.volte(V.ratio)+" volte chi la usa ("+pct(V.pos.rate)+")" : "")+". Sono "+num(V.zero.n)+" clienti.");
+}
+
+/* ---------- 2. segnale più forte ---------- */
+var VAR_TRANS = C.varBy("n_trans_12m");
+function renderSegnale(c){
+  var t=tok(), segs=C.segment(VAR_TRANS), small=c.node.clientWidth<560;
+  var mx=Math.max.apply(null, segs.map(function(s){return s.rate||0;}));
+  c.inst.setOption(Object.assign(base(t), {
+    tooltip: tipOpt(t, function(p){ var s=segs[p.dataIndex]; return "<b>"+pct(s.rate)+"</b> ha chiuso · "+esc(s.label)+" transazioni<br>"+chiusi(s.c)+" su "+num(s.n)+" clienti"; }),
+    grid:{left:6, right:small?8:18, top:26, bottom:30, containLabel:true},
+    xAxis:{type:"category", data:segs.map(function(s){return s.label;}), name:"Transazioni con la carta negli ultimi 12 mesi", nameLocation:"middle", nameGap:50,
+      nameTextStyle:{color:t.ink2, fontSize:13, fontFamily:FONT}, axisLine:{lineStyle:{color:t.line}}, axisTick:{show:false},
+      axisLabel:{interval:0, formatter:function(v,i){ return "{a|"+v+"}\n{n|n="+num(segs[i].n)+"}"; },
+        rich:{a:{fontSize:small?12:15, fontWeight:600, color:t.ink, lineHeight:22, fontFamily:FONT}, n:{fontSize:12, color:t.ink2, lineHeight:16, fontFamily:FONT}}}},
+    yAxis:valAxis(t, {min:0, max:Math.max(0.2, Math.ceil((mx+0.06)*10)/10), interval:0.1, axisLabel:{color:t.ink2, fontSize:13, fontFamily:FONT, formatter:function(v){ return pct(v,0); }}}),
+    series:[{type:"bar", name:"Tasso di abbandono", data:segs.map(function(s){return s.rate;}), barMaxWidth:24,
+      itemStyle:{color:t.s2, borderRadius:[4,4,0,0]}, emphasis:{itemStyle:{color:t.s2}},
+      label:{show:true, position:"top", distance:6, color:t.ink, fontSize:small?12:14, fontWeight:600, fontFamily:FONT, formatter:function(p){ return small ? pct(p.value,0) : pct(p.value); }},
+      markLine:meanLine(t, "yAxis", ALL.rate)}]
+  }), true);
+  c.node.setAttribute("aria-label", "Tasso di abbandono per fascia di transazioni: "+segs.map(function(s){ return s.label+" "+pct(s.rate)+" su "+s.n+" clienti"; }).join("; ")+". Media "+pct(ALL.rate)+".");
+}
+function textSegnale(){
+  var I=C.insights(), T=I.trans;
+  var t="Fino a "+T.cut.lo+" transazioni l'anno chiude 1 cliente su "+num(Math.round(1/T.lo.rate));
+  t += T.hi.rate<0.02 ? "; oltre "+T.cut.hi+" quasi nessuno ("+pct(T.hi.rate)+")" : "; oltre "+T.cut.hi+" "+art(pct(T.hi.rate),"il");
+  $("t-segnale").textContent=t;
+  $("sub-segnale").textContent="Quota di clienti che hanno chiuso la carta, per numero di pagamenti fatti negli ultimi 12 mesi. La linea tratteggiata è la media di tutti i clienti ("+
+    pct(ALL.rate)+"). Sotto ogni colonna: quanti clienti ci sono in quella fascia.";
+  setupTV("segnale", function(){
+    var segs=C.segment(VAR_TRANS);
+    return {caption:"Tasso di abbandono per fascia di transazioni (12 mesi)", file:"abbandono_per_transazioni.csv",
+      cols:[{h:"Fascia transazioni",f:"text"},{h:"Clienti",f:"int"},{h:"Chiusi",f:"int"},{h:"Tasso di abbandono",f:"pct"}],
+      rows:segs.map(function(s){ return [s.label, s.n, s.c, s.rate]; }).concat([["Tutti i clienti", ALL.n, ALL.c, ALL.rate]])};
+  });
+}
+
+/* ---------- 3. mappa di calore ---------- */
+var tip=$("tip");
+function showTip(target, parts){
+  tip.textContent="";
+  parts.forEach(function(p,i){ if (i) tip.appendChild(el("br")); var s=el(p.b?"b":"span", p.w?"tw":"", p.t); tip.appendChild(s); if (p.after){ tip.appendChild(document.createTextNode(p.after)); } });
+  tip.hidden=false;
+  var r=target.getBoundingClientRect(), tw=tip.offsetWidth, th=tip.offsetHeight;
+  var x=r.left+r.width/2-tw/2, y=r.top-th-8;
+  if (y<8) y=r.bottom+8;
+  x=Math.max(8, Math.min(x, window.innerWidth-tw-8));
+  tip.style.left=x+"px"; tip.style.top=y+"px";
+}
+function hideTip(){ tip.hidden=true; }
+function lblC(n){ return n+" "+C.plur(n,"contatto","contatti"); }
+function lblM(n){ return n+" "+C.plur(n,"mese","mesi"); }
+function heatCell(td, s, rowLab, colLab, isTot){
+  var parts;
+  if (s.n===0){
+    td.className="hc hc-empty"; td.appendChild(el("span","hn","nessun cliente"));
+    parts=[{t:"Nessun cliente",b:true,after:" · "+rowLab+", "+colLab}];
+  } else if (s.n<C.SMALL_HEAT){
+    td.className="hc hc-small"+(isTot?" hc-tot":""); td.appendChild(el("span","hv","poco dati")); td.appendChild(el("span","hn","n="+num(s.n)));
+    parts=[{t:pct(s.rate),b:true,after:" ha chiuso · "+rowLab+", "+colLab},{t:chiusi(s.c)+" su "+num(s.n)+" "+C.plur(s.n,"cliente","clienti")},{t:"Campione piccolo: non trarne conclusioni",w:true}];
+  } else {
+    td.className="hc h"+C.heatBin(s.rate)+(isTot?" hc-tot":""); td.appendChild(el("span","hv",pct(s.rate))); td.appendChild(el("span","hn","n="+num(s.n)));
+    parts=[{t:pct(s.rate),b:true,after:" ha chiuso · "+rowLab+", "+colLab},{t:chiusi(s.c)+" su "+num(s.n)+" clienti"}];
+  }
+  td.tabIndex=0;
+  td.setAttribute("aria-label", parts.map(function(p){ return p.t+(p.after||""); }).join(". "));
+  var on=function(){ showTip(td, parts); };
+  td.addEventListener("mouseenter", on); td.addEventListener("focus", on);
+  td.addEventListener("mouseleave", hideTip); td.addEventListener("blur", hideTip);
+}
+function renderHeat(){
+  var Hm=C.heat(), S=C.heatSummary(Hm), tbl=$("heat"); tbl.textContent="";
+  var cg=el("colgroup"); var c0=el("col","c-lab"); cg.appendChild(c0); Hm.cols.forEach(function(){ cg.appendChild(el("col")); }); cg.appendChild(el("col")); tbl.appendChild(cg);
+  var thead=el("thead"), tr=el("tr"), corner=el("th","corner","Contatti assistenza ↓"); corner.scope="col"; tr.appendChild(corner);
+  Hm.cols.forEach(function(m){ var th=el("th","",lblM(m)); th.scope="col"; tr.appendChild(th); });
+  var thT=el("th","","Tutti"); thT.scope="col"; tr.appendChild(thT); thead.appendChild(tr); tbl.appendChild(thead);
+  var tb=el("tbody");
+  Hm.rows.forEach(function(cn,i){
+    var row=el("tr"), th=el("th","",lblC(cn)); th.scope="row"; row.appendChild(th);
+    Hm.cols.forEach(function(m,j){ var td=el("td"); heatCell(td, Hm.grid[i][j], lblC(cn), lblM(m)+" inattivi"); row.appendChild(td); });
+    var tt=el("td"); heatCell(tt, Hm.rowTot[i], lblC(cn), "tutti i mesi", true); row.appendChild(tt);
+    tb.appendChild(row);
+  });
+  var rowT=el("tr"), thA=el("th","","Tutti"); thA.scope="row"; rowT.appendChild(thA);
+  Hm.cols.forEach(function(m,j){ var td=el("td"); heatCell(td, Hm.colTot[j], "tutti i contatti", lblM(m)+" inattivi", true); rowT.appendChild(td); });
+  var tAll=el("td"); heatCell(tAll, Hm.all, "tutti i clienti", "media generale", true); rowT.appendChild(tAll);
+  tb.appendChild(rowT); tbl.appendChild(tb);
+
+  /* titolo calcolato */
+  var colWins=S.colSpread>=S.rowSpread;
+  $("t-mappa").textContent = colWins ? "Pesano più i mesi senza usare la carta che le chiamate all'assistenza"
+                                     : "Pesano più le chiamate all'assistenza che i mesi senza usare la carta";
+  var s="Con "+lblM(S.cols.hi.val)+" di inattività chiude "+art(pct(S.cols.hi.rate),"il")+", con "+lblM(S.cols.lo.val)+" "+art(pct(S.cols.lo.rate),"il")+
+    ". Con "+lblC(S.rows.hi.val)+" "+art(pct(S.rows.hi.rate),"il")+", con "+lblC(S.rows.lo.val)+" "+art(pct(S.rows.lo.rate),"il")+" (gruppi con almeno "+C.MIN_N_LEVE+" clienti).";
+  if (S.hot) s+=" La cella più calda con almeno "+C.HOT_MIN_N+" clienti: "+lblC(S.hot.contatti)+" e "+lblM(S.hot.mesi)+" inattivi, "+pct(S.hot.rate)+" (n="+num(S.hot.n)+").";
+  $("sub-mappa").textContent=s;
+
+  /* legenda */
+  var lg=$("heat-legend"); lg.textContent="";
+  var sc=el("div","hl-scale"), st=C.HEAT_STEPS, labs=["meno del "+pct(st[0],0)];
+  for (var i=1;i<st.length;i++) labs.push(pct(st[i-1],0).replace("%","")+"–"+pct(st[i],0));
+  labs.push(pct(st[st.length-1],0)+" e oltre");
+  labs.forEach(function(l,i){ var d=el("span","hl-step"), sw=el("i"); sw.style.background="var(--heat-"+i+")"; d.appendChild(sw); d.appendChild(el("span","",l)); sc.appendChild(d); });
+  var lt=el("span","hl-item"); lt.appendChild(el("strong","","Tasso di abbandono:")); lg.appendChild(lt); lg.appendChild(sc);
+  var a=el("span","hl-item"), b1=el("i","hl-box"); b1.style.background="var(--surface-2)"; b1.style.border="1.5px dashed var(--ink-2)"; a.appendChild(b1); a.appendChild(el("span","","poco dati (meno di "+C.SMALL_HEAT+" clienti)")); lg.appendChild(a);
+  var e=el("span","hl-item"), b2=el("i","hl-box"); b2.style.border="1px solid var(--line)"; e.appendChild(b2); e.appendChild(el("span","","nessun cliente")); lg.appendChild(e);
+  var tt2=el("span","hl-item"), b3=el("i","hl-box"); b3.style.boxShadow="inset 0 0 0 2px var(--ink-2)"; b3.style.background="var(--heat-2)"; tt2.appendChild(b3); tt2.appendChild(el("span","","riga/colonna «Tutti» = totali")); lg.appendChild(tt2);
+
+  setupTV("mappa", function(){
+    var cols=[{h:"Contatti assistenza",f:"text"}];
+    Hm.cols.forEach(function(m){ cols.push({h:lblM(m)+" – clienti",f:"int"},{h:lblM(m)+" – tasso",f:"pct"}); });
+    cols.push({h:"Tutti – clienti",f:"int"},{h:"Tutti – tasso",f:"pct"});
+    var rows=Hm.rows.map(function(cn,i){ var r=[lblC(cn)]; Hm.grid[i].forEach(function(s){ r.push(s.n, s.n?s.rate:null); }); r.push(Hm.rowTot[i].n, Hm.rowTot[i].rate); return r; });
+    var last=["Tutti"]; Hm.colTot.forEach(function(s){ last.push(s.n, s.rate); }); last.push(Hm.all.n, Hm.all.rate); rows.push(last);
+    return {caption:"Tasso di abbandono per contatti con l'assistenza (righe) e mesi inattivi (colonne). Celle con meno di "+C.SMALL_HEAT+" clienti: campione piccolo.", file:"abbandono_contatti_x_inattivita.csv", cols:cols, rows:rows};
+  });
+}
+
+/* ---------- 4. dispersione con selezione ---------- */
+var EX=C.EXAMPLE, SEL={x0:EX.x0,x1:EX.x1,y0:EX.y0,y1:EX.y1}, scatterC=null, applying=false;
+function rangeText(b){ return "Transazioni "+num(Math.round(b.x0))+"–"+num(Math.round(b.x1))+" · Spesa "+num(Math.round(b.y0))+"–"+eur(Math.round(b.y1)); }
+function applyBrush(){
+  if (!scatterC) return;
+  applying=true;
+  scatterC.inst.dispatchAction({type:"brush", areas: SEL ? [{brushType:"rect", xAxisIndex:0, yAxisIndex:0, coordRange:[[SEL.x0,SEL.x1],[SEL.y0,SEL.y1]]}] : []});
+  applying=false;
+  updateSel();
+}
+function renderScatter(c){
+  var t=tok(), att=[], chi=[], small=c.node.clientWidth<560;
+  R.forEach(function(r,i){ (C.isC(r)?chi:att).push([r.n_trans_12m, r.importo_12m, i]); });
+  var xmax=Math.ceil(Math.max.apply(null,R.map(function(r){return r.n_trans_12m;}))/20)*20;
+  var ymax=Math.ceil(Math.max.apply(null,R.map(function(r){return r.importo_12m;}))/2000)*2000;
+  function ser(name, data, col, z){
+    return {type:"scatter", name:name, data:data, symbolSize:small?7:8, z:z, itemStyle:{color:col, borderColor:t.surface, borderWidth:1, opacity:1},
+      emphasis:{scale:1.7, itemStyle:{borderColor:t.ink, borderWidth:1.5}}};
+  }
+  c.inst.setOption(Object.assign(base(t), {
+    tooltip: tipOpt(t, function(p){ var r=R[p.data[2]];
+      return "<b>"+(C.isC(r)?"Chiuso":"Attivo")+"</b> · "+esc(r.nome+" "+r.cognome)+"<br>"+num(r.n_trans_12m)+" transazioni · "+eur(r.importo_12m)+
+        (r.motivo ? "<br>Motivo: "+esc(r.motivo) : ""); }),
+    grid:{left:6, right:small?10:20, top:14, bottom:34, containLabel:true},
+    xAxis:valAxis(t, {min:0, max:xmax, interval:20, name:"Transazioni 12 mesi", nameLocation:"middle", nameGap:30, nameTextStyle:{color:t.ink2, fontSize:13, fontFamily:FONT},
+      axisLine:{show:true, lineStyle:{color:t.line}}}),
+    yAxis:valAxis(t, {min:0, max:ymax, name:small?"":"Spesa 12 mesi", nameLocation:"middle", nameGap:64, nameTextStyle:{color:t.ink2, fontSize:13, fontFamily:FONT},
+      axisLabel:{color:t.ink2, fontSize:12, fontFamily:FONT, formatter:function(v){ return small ? num(v/1000)+" mila €" : eur(v); }}}),
+    toolbox:{show:false, feature:{brush:{type:["rect","clear"]}}},
+    brush:{xAxisIndex:0, yAxisIndex:0, brushType:"rect", brushMode:"single", transformable:true, removeOnClick:false,
+      throttleType:"debounce", throttleDelay:40,
+      brushStyle:{borderWidth:2, color:rgba(t.aurora, 0.10), borderColor:t.aurora},
+      inBrush:{opacity:1}, outOfBrush:{colorAlpha:0.2}},
+    series:[ser("Attivi", att, t.s1, 2), ser("Chiusi", chi, t.s2, 3)]
+  }), true);
+  c.inst.dispatchAction({type:"takeGlobalCursor", key:"brush", brushOption:{brushType:"rect", brushMode:"single"}});
+  applyBrush();
+}
+function onBrush(p){
+  if (applying) return;
+  var b=p && p.batch && p.batch[0]; if (!b) return;
+  var areas=b.areas||[];
+  if (!areas.length) return; /* la selezione si cancella solo col pulsante */
+  var cr=areas[0].coordRange;
+  if (cr && cr.length===2 && cr[0] && cr[0].length===2){
+    SEL={x0:Math.min(cr[0][0],cr[0][1]), x1:Math.max(cr[0][0],cr[0][1]), y0:Math.min(cr[1][0],cr[1][1]), y1:Math.max(cr[1][0],cr[1][1])};
+    updateSel();
+  }
+}
+function updateSel(){
+  var S=C.select(SEL), has=!!(S && S.n);
+  $("sel-body").hidden=!has; $("sel-empty").hidden=has;
+  if (!SEL){ $("sel-range").textContent="Nessuna selezione attiva."; }
+  else {
+    var isEx=Math.abs(SEL.x0-EX.x0)<0.5&&Math.abs(SEL.x1-EX.x1)<0.5&&Math.abs(SEL.y0-EX.y0)<1&&Math.abs(SEL.y1-EX.y1)<1;
+    $("sel-range").textContent=(isEx?"Esempio «zona rossa»\n":"")+rangeText(SEL).replace(" · ","\n");
+  }
+  if (!has){ if (SEL) $("sel-empty").textContent="Nel rettangolo non c'è nessun cliente. Prova un'area più ampia."; else $("sel-empty").textContent="Nessun gruppo selezionato. Trascina un rettangolo sul grafico, oppure ripristina l'esempio."; if (TV.sel) TV.sel.refresh(); return; }
+  $("sel-n").textContent=num(S.n);
+  $("sel-rate").textContent=pct(S.rate);
+  var ratio=S.rate/ALL.rate, cmp;
+  if (S.n<C.SMALL_SEG) cmp="Campione piccolo (n="+S.n+"): allarga la selezione prima di trarre conclusioni.";
+  else if (S.rate===0) cmp="Nessuno ha chiuso in questo gruppo (media generale "+pct(ALL.rate)+").";
+  else if (ratio>=1.1) cmp=C.volte(ratio)+" volte la media di tutti i clienti ("+pct(ALL.rate)+"): "+chiusi(S.c)+" su "+num(S.n)+".";
+  else if (ratio<=0.9) cmp="Meno della media di tutti i clienti ("+pct(ALL.rate)+"): "+chiusi(S.c)+" su "+num(S.n)+".";
+  else cmp="In linea con la media di tutti i clienti ("+pct(ALL.rate)+"): "+chiusi(S.c)+" su "+num(S.n)+".";
+  var cp=$("sel-cmp"); cp.textContent=cmp; cp.className="sel-cmp"+(S.n<C.SMALL_SEG?" warn-t":"");
+  var tb=$("sel-means-b"); tb.textContent="";
+  S.means.forEach(function(m){ var tr=el("tr"); var th=el("td","",m.label); tr.appendChild(th); tr.appendChild(el("td","",fmtBy(m.f,m.g))); tr.appendChild(el("td","",fmtBy(m.f,m.all))); tb.appendChild(tr); });
+  var ul=$("sel-reasons"); ul.textContent="";
+  if (!S.reasons.length){ ul.appendChild(el("li","","Nessun cliente chiuso nel gruppo.")); }
+  else {
+    var mx=S.reasons[0].n;
+    S.reasons.forEach(function(r){
+      var li=el("li"); li.appendChild(el("span","rb-l",r.motivo));
+      var tr=el("span","rb-t"), f=el("span","rb-f"); f.style.display="block"; f.style.width=(r.n/mx*100)+"%"; tr.appendChild(f); li.appendChild(tr);
+      li.appendChild(el("span","rb-n",num(r.n))); ul.appendChild(li);
+    });
+  }
+  if (TV.sel) TV.sel.refresh();
+}
+function textSelezione(){
+  var S=C.select(EX);
+  $("t-selezione").textContent="Nella «zona rossa» chiude "+art(pct(S.rate),"il")+" dei clienti: "+C.volte(S.rate/ALL.rate)+" volte la media";
+  $("sub-selezione").textContent="Ogni punto è un cliente: blu gli attivi, arancio i chiusi. All'apertura è selezionata la zona rossa ("+
+    EX.x0+"–"+EX.x1+" transazioni, "+num(EX.y0)+"–"+eur(EX.y1)+" di spesa in 12 mesi). Trascina un rettangolo altrove per confrontare un altro gruppo.";
+  $("btn-sel-esempio").addEventListener("click", function(){ SEL={x0:EX.x0,x1:EX.x1,y0:EX.y0,y1:EX.y1}; applyBrush(); });
+  $("btn-sel-clear").addEventListener("click", function(){ SEL=null; applyBrush(); });
+  setupTV("sel", function(){
+    var S2=C.select(SEL), rows=S2 ? S2.rows.slice().sort(function(a,b){ return (C.isC(b)-C.isC(a)) || a.n_trans_12m-b.n_trans_12m; }) : [];
+    return {caption: S2 ? "Clienti nel rettangolo: "+rangeText(SEL)+" ("+num(S2.n)+")" : "Nessuna selezione attiva", file:"clienti_selezionati.csv",
+      cols:[{h:"ID cliente",f:"id"},{h:"Cliente",f:"text"},{h:"Stato",f:"text"},{h:"Transazioni 12 mesi",f:"int"},{h:"Spesa 12 mesi",f:"eur"},{h:"Mesi inattivi",f:"int"},{h:"Contatti",f:"int"},{h:"Prodotti",f:"int"},{h:"Motivo chiusura",f:"text"}],
+      rows:rows.map(function(r){ return [r.id, r.nome+" "+r.cognome, r.stato, r.n_trans_12m, r.importo_12m, r.mesi_inattivi, r.contatti, r.prodotti, r.motivo||""]; })};
+  });
+}
+
+/* ---------- 5. segmenta ---------- */
+var segVar=C.varBy("prodotti"), segSort="rate";
+function segList(){
+  var segs=C.segment(segVar), shown=segs.filter(function(s){return s.n>0;});
+  if (segSort==="rate") shown.sort(function(a,b){ return (b.rate-a.rate) || (b.n-a.n); }); else shown.sort(function(a,b){ return a.nat-b.nat; });
+  return {all:segs, shown:shown, empty:segs.filter(function(s){return s.n===0;})};
+}
+function renderSeg(c){
+  var t=tok(), L=segList(), small=c.node.clientWidth<560, rowH=small?42:46;
+  var h=L.shown.length*rowH+64; if (c.node.style.height!==h+"px"){ c.node.style.height=h+"px"; c.inst.resize(); }
+  var mx=Math.max.apply(null, L.shown.map(function(s){return s.rate;}));
+  var xmax=Math.min(1, Math.max(0.3, Math.ceil((mx+0.02)*10)/10));
+  c.inst.setOption(Object.assign(base(t), {
+    tooltip: tipOpt(t, function(p){ var s=L.shown[p.dataIndex];
+      return "<b>"+pct(s.rate)+"</b> ha chiuso · "+esc(s.label)+"<br>"+chiusi(s.c)+" su "+num(s.n)+" clienti"+(s.small?"<br><span style=\"color:"+t.warn+";font-weight:600\">Campione piccolo</span>":""); }),
+    grid:{left:6, right:small?118:190, top:30, bottom:6, containLabel:true},
+    xAxis:valAxis(t, {min:0, max:xmax, splitNumber:small?3:5, axisLabel:{color:t.ink2, fontSize:12, fontFamily:FONT, formatter:function(v){ return pct(v,0); }}}),
+    yAxis:{type:"category", inverse:true, data:L.shown.map(function(s){return s.label;}), axisLine:{lineStyle:{color:t.line}}, axisTick:{show:false},
+      axisLabel:{color:t.ink, fontSize:14, fontFamily:FONT, width:small?110:220, overflow:"break", lineHeight:17}},
+    series:[{type:"bar", name:"Tasso di abbandono", barMaxWidth:24,
+      data:L.shown.map(function(s){ return {value:s.rate, itemStyle: s.small
+        ? {color:rgba(t.s2,0.28), borderColor:t.s2, borderWidth:1.5, borderType:"dashed", borderRadius:[0,4,4,0]}
+        : {color:t.s2, borderRadius:[0,4,4,0]}}; }),
+      label:{show:true, position:"right", distance:8, fontFamily:FONT, backgroundColor:t.surface, padding:[2,4],
+        formatter:function(p){ var s=L.shown[p.dataIndex]; return "{v|"+pct(s.rate)+"}  {n|n="+num(s.n)+"}"+(s.small ? (small?"\n":"  ")+"{w|campione piccolo}" : ""); },
+        rich:{v:{fontSize:14, fontWeight:600, color:t.ink, fontFamily:FONT}, n:{fontSize:13, color:t.ink2, fontFamily:FONT}, w:{fontSize:12, color:t.warn, fontWeight:600, fontFamily:FONT}}},
+      emphasis:{disabled:true},
+      markLine:meanLine(t, "xAxis", ALL.rate, "start")}]
+  }), true);
+  c.node.setAttribute("aria-label", "Tasso di abbandono per "+segVar.label+": "+L.shown.map(function(s){ return s.label+" "+pct(s.rate)+" (n="+s.n+")"; }).join("; "));
+}
+function updateSegTexts(){
+  var L=segList();
+  $("t-segmenta").textContent=C.segTitle(segVar, L.all, ALL);
+  var d=segVar.label+(segVar.desc ? " — "+segVar.desc : "")+".";
+  if (segVar.kind==="bin") d+=" Fasce definite per questa analisi.";
+  $("var-desc").textContent=d;
+  var notes=[];
+  var sm=L.all.filter(function(s){return s.small;});
+  if (sm.length) notes.push("Campione piccolo: "+sm.map(function(s){ return s.label+" (n="+s.n+")"; }).join(", ")+". Da leggere con cautela.");
+  if (L.empty.length) notes.push(L.empty.map(function(s){return s.label;}).join(", ")+": nessun cliente nel file, quindi nessuna barra (non è uno 0%).");
+  $("seg-note").textContent=notes.join(" ");
+  if (TV.segmenta) TV.segmenta.refresh();
+}
+var segC=null;
+function setSegVar(k){
+  var v=C.varBy(k); if (!v) return; segVar=v; $("sel-var").value=k;
+  updateSegTexts(); if (segC) segC.render(segC);
+}
+function initSeg(){
+  var s=$("sel-var"), groups={};
+  C.VARS.forEach(function(v){
+    if (!groups[v.group]){ groups[v.group]=el("optgroup"); groups[v.group].label=v.group; s.appendChild(groups[v.group]); }
+    var o=el("option","",v.label); o.value=v.k; groups[v.group].appendChild(o);
+  });
+  s.value=segVar.k;
+  s.addEventListener("change", function(){ setSegVar(s.value); });
+  $("lg-small").textContent="Campione piccolo (meno di "+C.SMALL_SEG+" clienti): da leggere con cautela";
+  function setSort(m){ segSort=m; $("sort-rate").setAttribute("aria-pressed", String(m==="rate")); $("sort-nat").setAttribute("aria-pressed", String(m==="nat")); updateSegTexts(); if (segC) segC.render(segC); }
+  $("sort-rate").addEventListener("click", function(){ setSort("rate"); });
+  $("sort-nat").addEventListener("click", function(){ setSort("nat"); });
+  setupTV("segmenta", function(){
+    var L=segList(), rows=L.shown.map(function(s){ return [s.label, s.n, s.c, s.rate, s.small?"sì":""]; });
+    L.empty.forEach(function(s){ rows.push([s.label, 0, 0, null, "nessun cliente"]); });
+    return {caption:"Tasso di abbandono per «"+segVar.label+"»", file:"abbandono_per_"+segVar.k+".csv",
+      cols:[{h:segVar.label,f:"text"},{h:"Clienti",f:"int"},{h:"Chiusi",f:"int"},{h:"Tasso di abbandono",f:"pct"},{h:"Campione piccolo",f:"text"}], rows:rows};
+  });
+  updateSegTexts();
+}
+
+/* ---------- 6. leve (manubrio) ---------- */
+var SP=null;
+function renderLeve(c){
+  var t=tok(), w=c.node.clientWidth, small=w<560, wide=w>=860, rowH=wide?50:(small?38:44);
+  var h=SP.length*rowH+56; if (c.node.style.height!==h+"px"){ c.node.style.height=h+"px"; c.inst.resize(); }
+  var mx=Math.max.apply(null, SP.map(function(s){return s.hi.rate;})), xmax=Math.ceil((mx+0.03)*10)/10;
+  function tipF(p){ var s=SP[p.dataIndex];
+    return "<b>da "+pct(s.lo.rate)+" a "+pct(s.hi.rate)+"</b> · "+esc(s.v.label)+"<br>Si chiude di più: "+esc(C.catName(s.v,s.hi))+" ("+pct(s.hi.rate)+", n="+num(s.hi.n)+")<br>Si chiude di meno: "+
+      esc(C.catName(s.v,s.lo))+" ("+pct(s.lo.rate)+", n="+num(s.lo.n)+")<br>Differenza: "+num(s.spread*100,1)+" punti"; }
+  c.inst.setOption(Object.assign(base(t), {
+    tooltip: tipOpt(t, tipF),
+    grid:{left:6, right:small?62:(wide?150:120), top:30, bottom:6, containLabel:true},
+    xAxis:valAxis(t, {min:0, max:xmax, splitNumber:small?3:6, axisLabel:{color:t.ink2, fontSize:12, fontFamily:FONT, formatter:function(v){ return pct(v,0); }}}),
+    yAxis:{type:"category", inverse:true, triggerEvent:true, data:SP.map(function(s){return s.v.label;}), axisLine:{show:false}, axisTick:{show:false},
+      axisLabel:{fontFamily:FONT, formatter:function(v,i){ var s=SP[i]; return wide ? "{a|"+v+"}\n{b|più alto: "+C.catName(s.v,s.hi)+" · più basso: "+C.catName(s.v,s.lo)+"}" : "{a|"+v+"}"; },
+        rich:{a:{fontSize:14, fontWeight:600, color:t.ink, lineHeight:19, fontFamily:FONT, align:"right"}, b:{fontSize:12, color:t.ink2, lineHeight:16, fontFamily:FONT, align:"right"}}}},
+    series:[
+      {type:"bar", stack:"d", silent:true, barWidth:4, itemStyle:{color:"transparent"}, emphasis:{disabled:true}, tooltip:{show:false}, data:SP.map(function(s){return s.lo.rate;})},
+      {type:"bar", stack:"d", barWidth:4, itemStyle:{color:t.muted, borderRadius:2}, emphasis:{disabled:true}, data:SP.map(function(s){return s.spread;}),
+        markLine:meanLine(t, "xAxis", ALL.rate, "start")},
+      {type:"scatter", name:"Fascia dove si chiude meno", symbolSize:14, z:4, itemStyle:{color:t.surface, borderColor:t.ink2, borderWidth:2.5},
+        data:SP.map(function(s,i){ return [s.lo.rate, i]; })},
+      {type:"scatter", name:"Fascia dove si chiude di più", symbolSize:14, z:5, itemStyle:{color:t.s2, borderColor:t.surface, borderWidth:2},
+        label:{show:true, position:"right", distance:9, color:t.ink, fontSize:13, fontFamily:FONT, backgroundColor:t.surface, padding:[1,3],
+          formatter:function(p){ var s=SP[p.dataIndex]; return small ? "+"+num(s.spread*100,0) : "+"+num(s.spread*100,1)+" punti"; }},
+        data:SP.map(function(s,i){ return [s.hi.rate, i]; })}
+    ]
+  }), true);
+}
+function textLeve(){
+  SP=C.spreads();
+  var a=SP[0], b=SP[1], c3=SP[2];
+  $("t-leve").textContent=a.v.label+", "+b.v.label.toLowerCase()+" e "+c3.v.label.toLowerCase()+" separano di più chi resta da chi chiude";
+  var prof=SP.filter(function(s){return s.v.group==="Profilo del cliente";}), maxProf=prof.length?prof[0]:null;
+  var top3same=(a.v.group===b.v.group&&b.v.group===c3.v.group);
+  var s="Per «"+a.v.label+"» l'abbandono va "+art(pct(a.lo.rate),"dal")+" ("+C.catName(a.v,a.lo)+") "+art(pct(a.hi.rate),"al")+" ("+C.catName(a.v,a.hi)+").";
+  if (top3same) s+=" Le prime tre leve riguardano tutte «"+a.v.group.toLowerCase()+"».";
+  if (maxProf) s+=" Tra i dati anagrafici la differenza più ampia è "+num(maxProf.spread*100,1)+" punti ("+maxProf.v.label.toLowerCase()+").";
+  $("sub-leve").textContent=s;
+  var ht=$("howto-leve"); ht.textContent="";
+  ht.appendChild(el("b","","Come si legge: "));
+  ht.appendChild(document.createTextNode("ogni riga è una variabile. Il cerchio vuoto è la fascia dove si chiude meno, il pallino arancio quella dove si chiude di più: più la linea è lunga, più quella variabile distingue chi resta da chi se ne va. Contano solo fasce con almeno "+C.MIN_N_LEVE+" clienti. Clicca una riga per aprirla nella sezione 5."));
+  var skipped=SP.filter(function(s){return s.skipped.length;}).map(function(s){ return s.v.label+": "+s.skipped.map(function(k){return k.label+" (n="+k.n+")";}).join(", "); });
+  $("note-leve").textContent="È un confronto descrittivo: mostra dove l'abbandono è diverso, non che cosa lo causa. La classifica dipende anche da come sono costruite le fasce."+
+    (skipped.length ? " Escluse perché troppo piccole — "+skipped.join("; ")+"." : "");
+  setupTV("leve", function(){
+    return {caption:"Per ogni variabile: fascia con abbandono più alto e più basso (solo fasce con almeno "+C.MIN_N_LEVE+" clienti)", file:"leve_abbandono.csv",
+      cols:[{h:"Variabile",f:"text"},{h:"Fascia più alta",f:"text"},{h:"Tasso più alto",f:"pct"},{h:"Clienti (alta)",f:"int"},{h:"Fascia più bassa",f:"text"},{h:"Tasso più basso",f:"pct"},{h:"Clienti (bassa)",f:"int"},
+        {h:"Differenza (punti)",f:"d1"}],
+      rows:SP.map(function(s){ return [s.v.label, s.hi.label, s.hi.rate, s.hi.n, s.lo.label, s.lo.rate, s.lo.n, s.spread*100]; })};
+  });
+}
+
+/* ---------- 7. motivi ---------- */
+var RS=null, selReason=null;
+function renderMotivi(c){
+  var t=tok(), small=c.node.clientWidth<560, L=RS.list;
+  var h=L.length*(small?54:48)+40; if (c.node.style.height!==h+"px"){ c.node.style.height=h+"px"; c.inst.resize(); }
+  c.inst.setOption(Object.assign(base(t), {
+    tooltip: tipOpt(t, function(p){ var r=L[p.dataIndex]; return "<b>"+num(r.n)+" chiusure</b> · "+esc(r.motivo)+"<br>"+pct(r.share)+" di tutte le chiusure"; }),
+    grid:{left:6, right:small?70:110, top:8, bottom:6, containLabel:true},
+    xAxis:valAxis(t, {min:0, minInterval:1, show:false}),
+    yAxis:{type:"category", inverse:true, data:L.map(function(r){return r.motivo;}), axisLine:{lineStyle:{color:t.line}}, axisTick:{show:false}, triggerEvent:true,
+      axisLabel:{color:t.ink, fontSize:14, fontFamily:FONT, width:small?130:280, overflow:"break", lineHeight:17}},
+    series:[{type:"bar", barMaxWidth:24, cursor:"pointer",
+      data:L.map(function(r){ var on=(selReason===null||selReason===r.motivo); return {value:r.n, itemStyle:{color:on?t.s2:rgba(t.s2,0.35), borderRadius:[0,4,4,0]}}; }),
+      label:{show:true, position:"right", distance:8, fontFamily:FONT, formatter:function(p){ var r=L[p.dataIndex]; return "{v|"+num(r.n)+"}  {n|"+pct(r.share,0)+"}"; },
+        rich:{v:{fontSize:14, fontWeight:600, color:t.ink, fontFamily:FONT}, n:{fontSize:13, color:t.ink2, fontFamily:FONT}}},
+      emphasis:{itemStyle:{color:t.s2}}}]
+  }), true);
+}
+function delta(v, base, f){
+  var d=v-base, arrow=d>0?"▲ ":d<0?"▼ ":"= ";
+  if (f==="pct0") return arrow+num(Math.abs(d)*100,0)+" punti";
+  if (f==="d1") return arrow+num(Math.abs(d),1);
+  return arrow+num(Math.abs(d),2);
+}
+var METRICS=[{k:"contatti",l:"Contatti assistenza",f:"d2"},{k:"n_trans_12m",l:"Transazioni 12 mesi",f:"d1"},{k:"utilizzo",l:"Utilizzo carta",f:"pct0"}];
+function buildCards(){
+  var box=$("rcards"); box.textContent="";
+  var items=[{motivo:null, n:RS.total, share:1, m:RS.closedM, title:"Tutti i chiusi"}].concat(RS.list.map(function(r){ return {motivo:r.motivo,n:r.n,share:r.share,m:r.m,title:r.motivo}; }));
+  items.forEach(function(it,i){
+    var b=el("button","rcard"); b.type="button"; b.id="rc-"+i; b.setAttribute("aria-pressed", String(selReason===it.motivo));
+    b.appendChild(el("span","rc-t",it.title));
+    b.appendChild(el("span","rc-m", num(it.n)+" "+C.plur(it.n,"cliente","clienti")+(it.motivo ? " · "+pct(it.share)+" delle chiusure" : " · tutti i motivi")));
+    METRICS.forEach(function(m){
+      var row=el("span","rc-row"); row.appendChild(el("span","",m.l)); row.appendChild(el("span","v",fmtBy(m.f,it.m[m.k]))); row.appendChild(el("span","d",delta(it.m[m.k], RS.attM[m.k], m.f))); b.appendChild(row);
+    });
+    b.addEventListener("click", function(){ setReason(it.motivo); });
+    box.appendChild(b);
+  });
+  $("rc-note").textContent="▲ ▼ = sopra o sotto la media dei clienti attivi ("+num(RS.att.length)+"): contatti "+fmtBy("d2",RS.attM.contatti)+" · transazioni "+fmtBy("d1",RS.attM.n_trans_12m)+
+    " · utilizzo "+fmtBy("pct0",RS.attM.utilizzo)+". Clicca una scheda o una barra per vedere i clienti.";
+}
+function listData(){
+  var rows=(selReason===null ? RS.closed : RS.closed.filter(function(r){return r.motivo===selReason;})).slice().sort(function(a,b){ return a.n_trans_12m-b.n_trans_12m; });
+  return {file: selReason===null ? "clienti_chiusi.csv" : "clienti_chiusi_"+selReason.toLowerCase().replace(/[^a-z0-9àèéìòù]+/g,"_").replace(/^_|_$/g,"")+".csv",
+    cols:[{h:"ID cliente",f:"id"},{h:"Cliente",f:"text"},{h:"Età",f:"int"},{h:"Mesi da cliente",f:"int"},{h:"Transazioni 12 mesi",f:"int"},{h:"Spesa 12 mesi",f:"eur"},{h:"Mesi inattivi",f:"int"},
+      {h:"Contatti",f:"int"},{h:"Prodotti",f:"int"},{h:"Utilizzo carta",f:"pct0"}].concat(selReason===null?[{h:"Motivo",f:"text"}]:[]),
+    rows:rows.map(function(r){ var x=[r.id, r.nome+" "+r.cognome, r.eta, r.mesi_cliente, r.n_trans_12m, r.importo_12m, r.mesi_inattivi, r.contatti, r.prodotti, r.utilizzo]; if (selReason===null) x.push(r.motivo); return x; })};
+}
+function renderList(){
+  var d=listData();
+  $("list-title").textContent = selReason===null ? "Tutti i clienti chiusi ("+num(d.rows.length)+")" : "Clienti chiusi per «"+selReason+"» ("+num(d.rows.length)+")";
+  buildTable($("list-table"), d);
+}
+var motC=null;
+function setReason(m){
+  selReason=m;
+  Array.prototype.forEach.call(document.querySelectorAll(".rcard"), function(b,i){ var it=i===0?null:RS.list[i-1].motivo; b.setAttribute("aria-pressed", String(it===m)); });
+  renderList(); if (motC) motC.render(motC);
+}
+function textVoce(){
+  RS=C.reasons(); selReason=RS.list[0].motivo;
+  var top=RS.list[0];
+  $("t-voce").textContent="Il primo motivo è «"+top.motivo+"»: "+num(top.n)+" chiusure su "+num(RS.total)+" ("+pct(top.share)+")";
+  var byC=RS.list.slice().sort(function(a,b){return b.m.contatti-a.m.contatti;})[0];
+  $("sub-voce").textContent="Motivi registrati dal call center per i "+num(RS.total)+" clienti chiusi. Chi ha indicato «"+byC.motivo+"» aveva contattato l'assistenza "+
+    fmtBy("d2",byC.m.contatti)+" volte in media, contro "+fmtBy("d2",RS.attM.contatti)+" dei clienti attivi.";
+  buildCards(); renderList();
+  $("list-copia").addEventListener("click", function(){ copyText(toTSV(listData()), $("list-copia")); });
+  $("list-csv").addEventListener("click", function(){ var d=listData(); download(d.file, toCSV(d)); });
+  setupTV("voce", function(){
+    return {caption:"Chiusure per motivo e medie rispetto ai clienti attivi", file:"motivi_chiusura.csv",
+      cols:[{h:"Motivo",f:"text"},{h:"Chiusure",f:"int"},{h:"Quota delle chiusure",f:"pct"},{h:"Contatti medi",f:"d2"},{h:"Transazioni medie",f:"d1"},{h:"Utilizzo medio",f:"pct0"}],
+      rows:RS.list.map(function(r){ return [r.motivo, r.n, r.share, r.m.contatti, r.m.n_trans_12m, r.m.utilizzo]; })
+        .concat([["Tutti i chiusi", RS.total, 1, RS.closedM.contatti, RS.closedM.n_trans_12m, RS.closedM.utilizzo],["Clienti attivi (riferimento)", RS.att.length, null, RS.attM.contatti, RS.attM.n_trans_12m, RS.attM.utilizzo]])};
+  });
+}
+
+/* ---------- tema ---------- */
+function themeBtn(){
+  var dark=H.dataset.theme==="dark";
+  $("btn-theme-t").textContent= dark ? "Tema chiaro" : "Tema scuro";
+  $("btn-theme").setAttribute("aria-label", dark ? "Passa al tema chiaro" : "Passa al tema scuro");
+}
+$("btn-theme").addEventListener("click", function(){
+  var t=H.dataset.theme==="dark" ? "light" : "dark"; H.dataset.theme=t;
+  try { localStorage.setItem("ba-theme", t); } catch(e){}
+  themeBtn(); renderAll();
+});
+
+/* ---------- indice (evidenzia la sezione corrente) ---------- */
+function initToc(){
+  var links=Array.prototype.slice.call(document.querySelectorAll(".toc a"));
+  function mark(id){ links.forEach(function(a){ var on=a.getAttribute("href")==="#"+id; if (on) a.setAttribute("aria-current","true"); else a.removeAttribute("aria-current"); }); }
+  mark("s-sintesi");
+  if (THUMB || !("IntersectionObserver" in window)) return;
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){ if (e.isIntersecting) mark(e.target.id);
+      var a=document.querySelector('.toc a[href="#'+e.target.id+'"]'); if (e.isIntersecting && a && a.scrollIntoView && window.innerWidth<1024){ var p=a.parentNode.parentNode.parentNode; p.scrollLeft=Math.max(0, a.offsetLeft-(parseFloat(getComputedStyle(p).paddingLeft)||0)-8); } });
+  }, {rootMargin:"-30% 0px -60% 0px"});
+  Array.prototype.forEach.call(document.querySelectorAll("main .sec"), function(s){ io.observe(s); });
+}
+
+/* ---------- avvio ---------- */
+var meta=D.meta||{}, file=String(meta.fonte||"Clienti_Banca_Aurora.xlsx").split(",")[0].trim();
+$("data-badge").textContent=num(R.length)+" clienti · "+file;
+$("foot-src").textContent="Fonte: "+(meta.fonte||file)+" · "+num(R.length)+" righe. Fasce delle variabili numeriche definite per questa analisi.";
+themeBtn();
+renderSintesi();
+textSegnale();
+renderHeat();
+textSelezione();
+initSeg();
+textLeve();
+textVoce();
+initToc();
+$("k3-a").addEventListener("click", function(){ setSegVar("revolving"); });
+
+if (window.echarts){
+  makeChart("ch-segnale", renderSegnale);
+  scatterC=makeChart("ch-scatter", renderScatter);
+  scatterC.inst.on("brushselected", onBrush);
+  scatterC.afterResize=function(){ applyBrush(); };
+  segC=makeChart("ch-seg", renderSeg);
+  var lev=makeChart("ch-leve", renderLeve);
+  lev.inst.on("click", function(p){
+    var i = p.componentType==="yAxis" ? SP.map(function(s){return s.v.label;}).indexOf(p.value) : p.dataIndex;
+    if (i>=0 && SP[i]){ setSegVar(SP[i].v.k); $("s-segmenta").scrollIntoView({behavior:RM?"auto":"smooth", block:"start"}); }
+  });
+  motC=makeChart("ch-motivi", renderMotivi);
+  motC.inst.on("click", function(p){
+    var i = p.componentType==="yAxis" ? RS.list.map(function(r){return r.motivo;}).indexOf(p.value) : p.dataIndex;
+    if (i>=0 && RS.list[i]) setReason(RS.list[i].motivo);
+  });
+  updateSel();
+  if (document.fonts && document.fonts.ready){ document.fonts.ready.then(function(){ renderAll(); }); }
+} else {
+  Array.prototype.forEach.call(document.querySelectorAll(".chart"), function(n){ n.style.height="auto"; n.textContent="Grafici non disponibili: la libreria ECharts non si è caricata (serve la connessione). Usa «Vista tabella» per leggere i numeri."; n.className="note"; });
+  updateSel();
+}
+})();
+</script>
+</body>
+</html>

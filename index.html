@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Galleria Dashboard HTML</title>
+<meta name="description" content="Sei dashboard in HTML costruite sullo stesso file Excel di 400 clienti di una banca inventata, Banca Aurora.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,500&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<script>
+/* Tema: scelta salvata (condivisa con le dashboard) oppure quello di sistema */
+(function(){ try { var t = localStorage.getItem("ba-theme"); if (t === "dark" || t === "light") document.documentElement.dataset.theme = t; } catch(e){} })();
+</script>
+<style>
+/* Layout: testata con la tesi ("un Excel, sei dashboard") e la scheda della fonte dati,
+   la scala delle sei domande come filtro, griglia di anteprime vive, confronto onesto con Excel e Power BI. */
+:root{
+  --bg:#F3F5F8; --surface:#FCFCFD; --surface-2:#EDF0F5;
+  --ink:#131A2A; --ink-2:#465068; --muted:#5F6A80; --line:#D8DDE6;
+  --brand:#16294D; --aurora:#D9572B; --aurora-soft:#FBE4D9;
+  --card-bg:#16294D; --card-fg:#EDF0F6; --card-fg-2:rgba(237,240,246,.78); --card-line:rgba(237,240,246,.18); --card-accent:#F08A58;
+  --chip-on-bg:#16294D; --chip-on-fg:#FCFCFD;
+  --frame:#131A2A;
+  --good:#127A3E; --mid:#9A6400; --weak:#B8322A;
+  --viewer-bg:#0B0F1A; --viewer-fg:#EDF0F6; --viewer-fg-2:#A3ACC0; --viewer-line:#262F45;
+  --font:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  --gutter:clamp(16px,4vw,40px);
+  --radius:8px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D1220; --surface:#151C2E; --surface-2:#1C2539;
+    --ink:#EDF0F6; --ink-2:#B9C1D3; --muted:#97A0B5; --line:#2A344C;
+    --brand:#A9C1EE; --aurora:#F08A58; --aurora-soft:#3A2418;
+    --card-bg:#1B2A4C; --card-fg:#EDF0F6; --card-fg-2:rgba(237,240,246,.78); --card-line:rgba(237,240,246,.18); --card-accent:#F08A58;
+    --chip-on-bg:#A9C1EE; --chip-on-fg:#0D1220;
+    --frame:#05070D;
+    --good:#3CC27A; --mid:#E2B04A; --weak:#F07A6E;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D1220; --surface:#151C2E; --surface-2:#1C2539;
+  --ink:#EDF0F6; --ink-2:#B9C1D3; --muted:#97A0B5; --line:#2A344C;
+  --brand:#A9C1EE; --aurora:#F08A58; --aurora-soft:#3A2418;
+  --card-bg:#1B2A4C; --card-fg:#EDF0F6; --card-fg-2:rgba(237,240,246,.78); --card-line:rgba(237,240,246,.18); --card-accent:#F08A58;
+  --chip-on-bg:#A9C1EE; --chip-on-fg:#0D1220;
+  --frame:#05070D;
+  --good:#3CC27A; --mid:#E2B04A; --weak:#F07A6E;
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.55 var(--font);-webkit-font-smoothing:antialiased}
+body.viewer-open{overflow:hidden}
+img,svg{max-width:100%}
+a{color:inherit}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--aurora);outline-offset:3px}
+.wrap{max-width:1240px;margin-inline:auto;padding-inline:var(--gutter)}
+.eyebrow{font:600 12.5px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
+
+/* ---------- Testata ---------- */
+.masthead{padding-block:clamp(24px,4vw,44px) clamp(28px,4vw,44px);border-bottom:1px solid var(--line)}
+.topline{display:flex;justify-content:space-between;align-items:center;gap:12px 16px;flex-wrap:wrap;margin-bottom:clamp(28px,5vw,48px)}
+.ba-brand{display:inline-flex;align-items:center;gap:8px}
+.ba-mark{width:26px;height:26px;flex:none}
+.ba-word{font-weight:700;letter-spacing:-.01em;color:var(--brand);font-size:17px}
+.topline-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.theme-btn{appearance:none;display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 13px;font-size:14px;font-weight:500;cursor:pointer}
+.theme-btn:hover{border-color:var(--ink-2)}
+.theme-btn svg{width:16px;height:16px}
+.hero{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:clamp(24px,5vw,64px);align-items:end}
+.hero h1{font-weight:700;font-size:clamp(36px,6.4vw,84px);line-height:1;letter-spacing:-.025em;margin:0 0 22px;text-wrap:balance}
+.hero h1 em{font-style:normal;color:var(--aurora)}
+.lead{font-size:clamp(17px,1.5vw,19px);line-height:1.6;color:var(--ink-2);max-width:62ch;margin:0}
+.lead strong{color:var(--ink);font-weight:600}
+
+.source{background:var(--card-bg);color:var(--card-fg);border-radius:var(--radius);padding:22px;display:grid;gap:16px;min-width:0}
+.source-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.file-ico{width:38px;height:44px;flex:none}
+.source-head strong{display:block;font-size:17px;font-weight:600;overflow-wrap:anywhere}
+.source-head span{display:block;font-size:13.5px;color:var(--card-fg-2)}
+.mini-sheet{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.mini-sheet th{font:600 12px/1.2 var(--mono);letter-spacing:.04em;text-align:left;color:var(--card-fg-2);padding:6px 8px;border-bottom:1px solid var(--card-line);white-space:nowrap}
+.mini-sheet td{padding:6px 8px;border-bottom:1px solid var(--card-line);white-space:nowrap}
+.mini-sheet td.closed{color:var(--card-accent);font-weight:600}
+.sheet-wrap{overflow-x:auto;margin-inline:-4px}
+.facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:0}
+.facts div{min-width:0}
+.facts dt{font:600 12px/1.3 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--card-fg-2);margin-bottom:4px}
+.facts dd{margin:0;font-size:24px;font-weight:600;letter-spacing:-.01em}
+.source-note{margin:0;font-size:13.5px;color:var(--card-fg-2)}
+
+/* ---------- Scala delle domande ---------- */
+.ladder{padding-block:clamp(28px,4vw,40px) 0}
+.ladder ol{list-style:none;margin:14px 0 0;padding:0;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;counter-reset:step}
+.ladder li{min-width:0}
+.step{appearance:none;width:100%;height:100%;text-align:left;border:1px solid var(--line);background:var(--surface);border-radius:var(--radius);padding:12px 12px 13px;cursor:pointer;display:flex;flex-direction:column;gap:6px;transition:border-color .15s,background .15s}
+.step:hover{border-color:var(--ink-2)}
+.step .n{font:600 12.5px/1 var(--mono);color:var(--aurora)}
+.step .q{font-size:15px;font-weight:600;line-height:1.25}
+.step .k{font-size:13px;color:var(--ink-2);line-height:1.3}
+.step[aria-pressed="true"]{background:var(--chip-on-bg);border-color:var(--chip-on-bg);color:var(--chip-on-fg)}
+.step[aria-pressed="true"] .n,.step[aria-pressed="true"] .k{color:var(--chip-on-fg)}
+
+/* ---------- Filtri ---------- */
+.catalog{padding-block:clamp(24px,3vw,32px) 16px}
+.filters{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:flex-start;margin-bottom:12px}
+.fgroup{display:flex;flex-wrap:wrap;align-items:center;gap:8px;border:0;margin:0;padding:0;min-width:0}
+.fgroup legend{float:left;font:600 12.5px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);margin-right:6px;padding:0}
+.chip{appearance:none;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);border-radius:999px;padding:7px 13px;font-size:14.5px;font-weight:500;cursor:pointer;transition:background .15s,color .15s,border-color .15s}
+.chip:hover{border-color:var(--ink-2);color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--chip-on-bg);border-color:var(--chip-on-bg);color:var(--chip-on-fg)}
+.count{font:600 13px/1.3 var(--mono);color:var(--ink-2);margin:0 0 22px}
+.count button{appearance:none;border:0;background:none;padding:0;color:var(--aurora);text-decoration:underline;text-underline-offset:3px;cursor:pointer;font:inherit}
+
+/* ---------- Griglia ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr));gap:clamp(20px,2.6vw,32px)}
+.tile{position:relative;display:flex;flex-direction:column;min-width:0}
+.tile[hidden]{display:none!important}
+.thumb{position:relative;aspect-ratio:16/10;max-width:100%;border-radius:var(--radius);overflow:hidden;background:var(--frame);transition:transform .25s ease,box-shadow .25s ease}
+.thumb .loading{position:absolute;inset:0;display:grid;place-items:center;font:600 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:rgba(237,240,246,.55)}
+.thumb iframe{position:absolute;left:0;top:0;width:1440px;height:900px;border:0;transform-origin:0 0;transform:scale(var(--s,.25));pointer-events:none;background:transparent}
+.thumb .who{position:absolute;left:10px;top:10px;z-index:2;font:600 12px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;background:rgba(19,26,42,.9);color:#EDF0F6;border-radius:999px;padding:7px 10px}
+.thumb .open-hint{position:absolute;inset:auto 10px 10px auto;z-index:2;font:600 14px/1 var(--font);background:#FCFCFD;color:#131A2A;border-radius:999px;padding:9px 13px;opacity:0;transform:translateY(4px);transition:opacity .2s,transform .2s}
+.tile:hover .thumb,.tile:focus-within .thumb{transform:translateY(-3px);box-shadow:0 14px 30px -12px rgba(10,16,30,.45)}
+.tile:hover .open-hint,.tile:focus-within .open-hint{opacity:1;transform:none}
+.tile-body{padding-top:16px;display:flex;flex-direction:column;gap:8px;flex:1}
+.qline{font:600 13px/1.4 var(--mono);color:var(--aurora)}
+.tile h3{margin:0;font-weight:700;font-size:25px;line-height:1.15;letter-spacing:-.015em;text-wrap:balance}
+.tile p{margin:0;color:var(--ink-2);font-size:15.5px;line-height:1.55}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px}
+.tags span{font-size:13px;font-weight:500;border:1px solid var(--line);border-radius:4px;padding:5px 8px;color:var(--ink-2);background:var(--surface)}
+.vs{margin-top:auto !important;padding-top:12px;border-top:1px solid var(--line);font-size:14.5px !important}
+.vs b{font:600 12px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);display:block;margin-bottom:5px}
+.tile-open{position:absolute;inset:0;z-index:3;appearance:none;border:0;background:transparent;cursor:pointer;border-radius:var(--radius)}
+.tile-open:focus-visible{outline:2px solid var(--aurora);outline-offset:6px}
+.empty{grid-column:1/-1;padding:40px 0;color:var(--ink-2)}
+
+/* ---------- Confronto ---------- */
+.section{padding-block:clamp(48px,7vw,84px) 0}
+.section-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:clamp(20px,4vw,64px);align-items:end;margin-bottom:28px}
+.section h2{font-weight:700;font-size:clamp(30px,4vw,50px);line-height:1.05;letter-spacing:-.02em;margin:10px 0 0;text-wrap:balance}
+.section-head p{margin:0;color:var(--ink-2);max-width:62ch}
+.table-wrap{overflow-x:auto;border-top:2px solid var(--ink)}
+table.cmp{width:100%;border-collapse:collapse;min-width:760px;font-size:15px}
+.cmp th,.cmp td{text-align:left;vertical-align:top;padding:15px 16px 15px 0;border-bottom:1px solid var(--line)}
+.cmp thead th{font:600 12.5px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2);padding-top:14px}
+.cmp thead th.hl{color:var(--aurora)}
+.cmp tbody th{font-weight:600;width:28%;padding-right:22px}
+.cmp td{color:var(--ink-2);width:24%}
+.mark{display:inline-flex;align-items:center;gap:7px;font-weight:600;color:var(--ink);margin-right:6px}
+.mark i{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+.mark.good i{background:var(--good)}
+.mark.mid i{background:transparent;border:2px solid var(--mid)}
+.mark.weak i{background:transparent;border:2px solid var(--weak);border-radius:2px}
+.legend{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:14px;font-size:13.5px;color:var(--ink-2)}
+.notes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(20px,3vw,40px);margin-top:clamp(40px,6vw,60px);padding-top:28px;border-top:1px solid var(--line)}
+.notes h3{margin:0 0 8px;font-size:17px;font-weight:700}
+.notes p{margin:0;color:var(--ink-2);font-size:15px}
+.notes code{font:500 13.5px/1 var(--mono);background:var(--surface-2);padding:2px 5px;border-radius:4px;overflow-wrap:anywhere}
+footer.foot{margin-top:clamp(56px,8vw,90px);padding-block:28px 40px;border-top:1px solid var(--line);color:var(--ink-2);font-size:14px}
+footer.foot .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+/* ---------- Visualizzatore ---------- */
+.viewer{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;background:var(--viewer-bg);color:var(--viewer-fg)}
+.viewer[hidden]{display:none!important}
+.vbar{display:flex;align-items:center;gap:10px;padding:8px 12px;padding-top:calc(8px + env(safe-area-inset-top,0px));border-bottom:1px solid var(--viewer-line);min-height:56px}
+.vbtn{appearance:none;border:1px solid var(--viewer-line);background:transparent;color:var(--viewer-fg);border-radius:999px;padding:8px 13px;font-size:14px;font-weight:500;cursor:pointer;white-space:nowrap;text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.vbtn:hover{background:rgba(255,255,255,.08)}
+.vbtn:focus-visible{outline:2px solid #F08A58;outline-offset:2px}
+.vtitle{flex:1;min-width:0;text-align:center;line-height:1.2}
+.vtitle small{display:block;font:600 12px/1.3 var(--mono);letter-spacing:.06em;color:var(--viewer-fg-2)}
+.vtitle strong{display:block;font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vgroup{display:flex;gap:6px;align-items:center}
+.vframe{flex:1;width:100%;border:0;background:#F3F5F8;display:block}
+@media (max-width:760px){ .vbtn .lbl{display:none} .vbtn{padding:8px 11px} .vtitle small{display:none} }
+
+/* ---------- Responsive ---------- */
+@media (max-width:1000px){ .ladder ol{grid-template-columns:repeat(3,minmax(0,1fr))} }
+@media (max-width:900px){
+  .hero{grid-template-columns:minmax(0,1fr);align-items:start}
+  .section-head{grid-template-columns:minmax(0,1fr)}
+  .notes{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:560px){ .ladder ol{grid-template-columns:repeat(2,minmax(0,1fr))} .facts dd{font-size:21px} .tile h3{font-size:23px} }
+@media (prefers-reduced-motion:reduce){
+  .thumb,.thumb .open-hint,.chip,.step{transition:none}
+  .tile:hover .thumb,.tile:focus-within .thumb{transform:none}
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="topline">
+      <span class="ba-brand"><svg viewBox="0 0 32 32" aria-hidden="true" class="ba-mark"><path d="M6 21a10 10 0 0 1 20 0z" fill="var(--aurora)"/><rect x="3" y="23.5" width="26" height="2.6" rx="1.3" fill="var(--brand)"/></svg><span class="ba-word">Banca Aurora</span></span>
+      <div class="topline-right">
+        <span class="eyebrow">Workshop · Dashboard in HTML</span>
+        <button class="theme-btn" id="themeBtn" type="button"></button>
+      </div>
+    </div>
+    <div class="hero">
+      <div>
+        <h1>Un file Excel, <em>sei</em> dashboard.</h1>
+        <p class="lead">Abbiamo preso l'elenco clienti di una banca inventata e l'abbiamo trasformato in sei dashboard. Ognuna risponde a una domanda diversa: cosa succede, dove guardare, perché, chi rischia, cosa dire al cliente, come rifarlo con i propri dati. <strong>Tutte leggono lo stesso file: aggiorni i dati, cambiano tutte.</strong></p>
+      </div>
+      <aside class="source" aria-label="La fonte dei dati">
+        <div class="source-head">
+          <svg class="file-ico" viewBox="0 0 38 44" aria-hidden="true"><path d="M3 2h22l10 10v30H3z" fill="#1E7A47"/><path d="M25 2v10h10" fill="#2EA866"/><path d="M11 20h16M11 26h16M11 32h16M19 17v18" stroke="#EDF0F6" stroke-width="2" fill="none"/></svg>
+          <div><strong id="srcName">Clienti_Banca_Aurora.xlsx</strong><span id="srcSub">Foglio «Clienti»</span></div>
+        </div>
+        <div class="sheet-wrap"><table class="mini-sheet" id="miniSheet" aria-label="Prime righe del file"></table></div>
+        <dl class="facts">
+          <div><dt>Clienti</dt><dd id="fRows">400</dd></div>
+          <div><dt>Colonne</dt><dd id="fCols">21</dd></div>
+          <div><dt>Hanno chiuso</dt><dd id="fChurn">16,0%</dd></div>
+        </dl>
+        <p class="source-note">Banca, persone e numeri sono di fantasia.</p>
+      </aside>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="ladder" aria-labelledby="ladderTitle">
+    <div class="wrap">
+      <h2 id="ladderTitle" class="eyebrow" style="margin:0">Sei domande, dalla più semplice alla più operativa</h2>
+      <ol id="ladder"></ol>
+    </div>
+  </section>
+
+  <section class="catalog" aria-labelledby="catalogTitle">
+    <div class="wrap">
+      <h2 id="catalogTitle" class="eyebrow" style="margin:0 0 16px">Le dashboard</h2>
+      <div class="filters">
+        <fieldset class="fgroup" id="fAudience"><legend>Per chi</legend></fieldset>
+        <fieldset class="fgroup" id="fFeat"><legend>Cosa sa fare</legend></fieldset>
+      </div>
+      <p class="count" id="count" aria-live="polite"></p>
+      <div class="grid" id="grid"></div>
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="cmpTitle">
+    <div class="wrap">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Il confronto, senza tifo</span>
+          <h2 id="cmpTitle">Excel, Power BI o una dashboard HTML?</h2>
+        </div>
+        <p>Non si escludono. Excel resta lo strumento per fare i conti, Power BI quello per i dati aziendali governati e aggiornati ogni giorno. La dashboard HTML vince quando serve qualcosa di su misura, da condividere con un link, che unisce numeri e racconto, e che si costruisce in poche ore con un assistente AI.</p>
+      </div>
+      <div class="table-wrap">
+        <table class="cmp">
+          <thead><tr><th scope="col">Cosa ti serve</th><th scope="col">Excel</th><th scope="col">Power BI / Tableau</th><th scope="col" class="hl">Dashboard HTML</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">Filtri incrociati tra grafici</th>
+              <td><span class="mark mid"><i></i>Limitati</span>Filtri dei dati collegati alle pivot.</td>
+              <td><span class="mark good"><i></i>Nativi</span>È il loro punto forte.</td>
+              <td><span class="mark good"><i></i>Su misura</span>Vanno progettati, poi si fa ciò che serve.</td></tr>
+            <tr><th scope="row">Condividere con chi non ha licenze</th>
+              <td><span class="mark mid"><i></i>Un file</span>Si apre solo con Excel installato.</td>
+              <td><span class="mark weak"><i></i>Licenze</span>Serve un account per ogni lettore.</td>
+              <td><span class="mark good"><i></i>Un link</span>Basta un browser, anche dal telefono.</td></tr>
+            <tr><th scope="row">Numeri e spiegazione nella stessa pagina</th>
+              <td><span class="mark weak"><i></i>No</span>Si scrive il commento in un'altra cella.</td>
+              <td><span class="mark mid"><i></i>Poco</span>Caselle di testo, spesso statiche.</td>
+              <td><span class="mark good"><i></i>Sì</span>Titoli e frasi calcolati dai dati.</td></tr>
+            <tr><th scope="row">Modelli e simulazioni what-if</th>
+              <td><span class="mark good"><i></i>Sì</span>Con formule, a mano, scenario per scenario.</td>
+              <td><span class="mark mid"><i></i>Con fatica</span>Parametri e misure da configurare.</td>
+              <td><span class="mark good"><i></i>Sì</span>Cursori che ricalcolano tutto in tempo reale.</td></tr>
+            <tr><th scope="row">Dati aggiornati in automatico dai sistemi aziendali</th>
+              <td><span class="mark mid"><i></i>Con fatica</span>Query e aggiornamenti manuali.</td>
+              <td><span class="mark good"><i></i>Maturo</span>Connettori e aggiornamenti pianificati.</td>
+              <td><span class="mark mid"><i></i>Da collegare</span>Serve una fonte pubblicata (foglio, API).</td></tr>
+            <tr><th scope="row">Permessi diversi per utente</th>
+              <td><span class="mark weak"><i></i>Deboli</span>Chi ha il file vede tutto.</td>
+              <td><span class="mark good"><i></i>Maturi</span>Sicurezza a livello di riga.</td>
+              <td><span class="mark weak"><i></i>Deboli</span>Un file statico mostra tutto a tutti.</td></tr>
+            <tr><th scope="row">Milioni di righe</th>
+              <td><span class="mark mid"><i></i>Fino a 1 milione</span>Poi diventa lento.</td>
+              <td><span class="mark good"><i></i>Sì</span>Il calcolo avviene sul server.</td>
+              <td><span class="mark mid"><i></i>Migliaia</span>Il calcolo avviene nel browser.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="legend" aria-hidden="true">
+        <span class="mark good"><i></i>punto di forza</span>
+        <span class="mark mid"><i></i>si può, con fatica o con limiti</span>
+        <span class="mark weak"><i></i>punto debole</span>
+      </div>
+
+      <div class="notes">
+        <div>
+          <h3>Una fonte, sei viste</h3>
+          <p>L'Excel originale è convertito una volta in <code>data/clienti_banca_aurora.js</code>. Tutte le dashboard leggono quel file: se cambiano i dati, si rigenera e si aggiornano tutte insieme.</p>
+        </div>
+        <div>
+          <h3>Come sono state fatte</h3>
+          <p>Ogni dashboard è un file HTML scritto con un assistente AI a partire da un brief: la domanda a cui rispondere, chi la usa, quali dati. Si aprono con un doppio click o da un link.</p>
+        </div>
+        <div>
+          <h3>Quando scegliere Power BI</h3>
+          <p>Quando i dati arrivano ogni giorno dai sistemi aziendali, sono milioni di righe o devono essere visibili solo a chi ne ha diritto.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <span>Banca Aurora è una banca inventata. Nomi, persone e numeri sono di fantasia, a scopo dimostrativo.</span>
+    <span>Galleria per workshop · ottobre 2026</span>
+  </div>
+</footer>
+
+<div class="viewer" id="viewer" role="dialog" aria-modal="true" aria-labelledby="vTitle" hidden>
+  <div class="vbar">
+    <button class="vbtn" id="vClose" type="button" aria-label="Torna alla galleria">← <span class="lbl">Galleria</span></button>
+    <div class="vgroup">
+      <button class="vbtn" id="vPrev" type="button" aria-label="Dashboard precedente">‹</button>
+      <button class="vbtn" id="vNext" type="button" aria-label="Dashboard successiva">›</button>
+    </div>
+    <div class="vtitle"><small id="vWho"></small><strong id="vTitle"></strong></div>
+    <div class="vgroup">
+      <button class="vbtn" id="vFull" type="button" aria-label="Schermo intero">⤢ <span class="lbl">Schermo intero</span></button>
+      <a class="vbtn" id="vTab" href="#" target="_blank" rel="noopener" hidden>↗ <span class="lbl">Nuova scheda</span></a>
+    </div>
+  </div>
+  <iframe class="vframe" id="vFrame" title="Dashboard" allow="fullscreen; clipboard-write"></iframe>
+</div>
+
+<script src="data/clienti_banca_aurora.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  /* ---------- Tema (condiviso con le dashboard tramite localStorage) ---------- */
+  var themeBtn = document.getElementById("themeBtn");
+  var SUN = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></g></svg>';
+  var MOON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z" fill="currentColor"/></svg>';
+  function isDark(){
+    var t = document.documentElement.dataset.theme;
+    if (t) return t === "dark";
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+  function paintThemeBtn(){
+    var dark = isDark();
+    themeBtn.innerHTML = (dark ? SUN : MOON) + "<span>" + (dark ? "Tema chiaro" : "Tema scuro") + "</span>";
+    themeBtn.setAttribute("aria-label", dark ? "Passa al tema chiaro" : "Passa al tema scuro");
+  }
+  themeBtn.addEventListener("click", function(){
+    var next = isDark() ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem("ba-theme", next); } catch(e){}
+    paintThemeBtn();
+  });
+  paintThemeBtn();
+
+  /* ---------- Fonte dati: numeri calcolati, non scritti a mano ---------- */
+  var D = window.BANCA_AURORA;
+  var fmtPct = new Intl.NumberFormat("it-IT", {minimumFractionDigits:1, maximumFractionDigits:1});
+  if (D && D.righe){
+    var n = D.righe.length, closed = D.righe.filter(function(r){ return r.stato === "Chiuso"; }).length;
+    document.getElementById("fRows").textContent = n.toLocaleString("it-IT");
+    document.getElementById("fCols").textContent = String(D.campi.length);
+    document.getElementById("fChurn").textContent = fmtPct.format(closed / n * 100) + "%";
+    var cols = [["id","ID"],["nome","Nome"],["eta","Età"],["carta","Carta"],["n_trans_12m","Transaz."],["stato","Stato"]];
+    var sheet = document.getElementById("miniSheet");
+    var thead = document.createElement("thead"), trh = document.createElement("tr");
+    cols.forEach(function(c){ var th = document.createElement("th"); th.scope = "col"; th.textContent = c[1]; trh.appendChild(th); });
+    thead.appendChild(trh); sheet.appendChild(thead);
+    var tbody = document.createElement("tbody");
+    /* tre attivi e un chiuso, per far vedere entrambi gli stati */
+    var sample = D.righe.filter(function(r){ return r.stato === "Attivo"; }).slice(0,3).concat(D.righe.filter(function(r){ return r.stato === "Chiuso"; }).slice(0,1));
+    sample.forEach(function(r){
+      var tr = document.createElement("tr");
+      cols.forEach(function(c){
+        var td = document.createElement("td");
+        var v = r[c[0]];
+        td.textContent = c[0] === "nome" ? r.nome + " " + r.cognome.charAt(0) + "." : String(v);
+        if (c[0] === "stato" && v === "Chiuso") td.className = "closed";
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    sheet.appendChild(tbody);
+    document.getElementById("srcSub").textContent = "Foglio «Clienti» · " + n.toLocaleString("it-IT") + " righe";
+  } else {
+    document.querySelector(".sheet-wrap").hidden = true;
+  }
+
+  /* ---------- Catalogo ---------- */
+  var AUD = [
+    {id:"tutti", label:"Tutti"},
+    {id:"direzione", label:"Direzione"},
+    {id:"analisti", label:"Analisti e marketing"},
+    {id:"operativi", label:"Filiali e call center"}
+  ];
+  var FEAT = [
+    {id:"tutte", label:"Tutto"},
+    {id:"filtri", label:"Filtri e selezioni"},
+    {id:"dettaglio", label:"Dal grafico al cliente"},
+    {id:"previsione", label:"Previsioni e simulazioni"},
+    {id:"racconto", label:"Testi calcolati dai dati"},
+    {id:"export", label:"Esporta i dati"},
+    {id:"file", label:"Carica un file"}
+  ];
+
+  var DASH = [
+    {id:"cruscotto", file:"dashboard/01_cruscotto_direzionale.html", n:1, q:"Cosa sta succedendo?", k:"Descrivere",
+     who:"Per la direzione", aud:["direzione"], title:"Cruscotto direzionale",
+     desc:"KPI, motivi di chiusura e composizione del portafoglio. I filtri in alto aggiornano tutto insieme; un click su un motivo mostra i clienti.",
+     feat:["filtri","dettaglio","racconto"], tags:["Filtri globali","KPI con confronto","Dal numero al cliente"],
+     vs:"In Excel servono una pivot e un grafico per ogni domanda, da rifare a ogni filtro."},
+    {id:"esploratore", file:"dashboard/02_esploratore_clienti.html", n:2, q:"Dove conviene guardare?", k:"Esplorare",
+     who:"Per analisti e CRM", aud:["analisti"], title:"Esploratore clienti",
+     desc:"Otto grafici collegati: clicchi una barra o trascini su un intervallo e tutti gli altri si aggiornano. Poi scendi alla lista e la esporti.",
+     feat:["filtri","dettaglio","export"], tags:["Filtri incrociati","Selezione col mouse","Lista esportabile"],
+     vs:"In Excel i grafici non si filtrano tra loro: si filtra la tabella e si ricomincia."},
+    {id:"abbandono", file:"dashboard/03_analisi_abbandono.html", n:3, q:"Perché se ne vanno?", k:"Capire",
+     who:"Per direzione e marketing", aud:["direzione","analisti"], title:"Analisi dell'abbandono",
+     desc:"Si legge come un racconto, con titoli calcolati dai dati, ma resta interrogabile: mappa di calore, selezione sui punti, confronto per qualsiasi variabile.",
+     feat:["filtri","dettaglio","racconto"], tags:["Mappa di calore","Segmenta per variabile","Titoli calcolati"],
+     vs:"In una slide l'analisi si ferma alle domande di chi l'ha preparata."},
+    {id:"rischio", file:"dashboard/04_clienti_a_rischio.html", n:4, q:"Chi rischia, e conviene agire?", k:"Prevedere",
+     who:"Per CRM e commerciale", aud:["direzione","analisti"], title:"Clienti a rischio",
+     desc:"Un modello di rischio dentro la pagina e un simulatore: muovi soglia, costi e valore del cliente e vedi subito se la campagna conviene.",
+     feat:["previsione","export","racconto"], tags:["Modello predittivo","Simulatore","Lista d'azione"],
+     vs:"In Excel lo scenario si rifà a mano, ipotesi per ipotesi."},
+    {id:"scheda", file:"dashboard/05_scheda_cliente.html", n:5, q:"Cosa dico a questo cliente?", k:"Agire",
+     who:"Per filiali e call center", aud:["operativi"], title:"Scheda cliente",
+     desc:"Cerchi un cliente e vedi rischio, motivi, confronto con i clienti simili e cosa proporgli, con le frasi da usare al telefono.",
+     feat:["previsione","dettaglio","racconto"], tags:["Ricerca","Il perché del rischio","Clienti simili"],
+     vs:"In Excel sono venti colonne da leggere riga per riga."},
+    {id:"carica", file:"dashboard/06_carica_i_tuoi_dati.html", n:6, q:"E con i miei dati?", k:"Fare da sé",
+     who:"Per tutti", aud:["direzione","analisti","operativi"], title:"Carica i tuoi dati",
+     desc:"Trascini un Excel o un CSV: il browser lo legge senza inviarlo a nessuno, controlla la qualità e costruisce grafici e tabelle pivot.",
+     feat:["file","export"], tags:["Excel e CSV","Controllo qualità","Pivot e grafici"],
+     vs:"Fa in un minuto il primo giro di controlli che in Excel richiede un pomeriggio."}
+  ];
+
+  var state = {aud:"tutti", feat:"tutte", step:0};
+  var grid = document.getElementById("grid"), countEl = document.getElementById("count");
+  var embedded = false;
+  try { embedded = window.self !== window.top; } catch(e){ embedded = true; }
+
+  function el(tag, cls, text){ var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+  /* Scala delle domande: è anche un filtro (un click isola la dashboard, un altro click toglie il filtro) */
+  var ladder = document.getElementById("ladder");
+  DASH.forEach(function(d){
+    var li = el("li"); var b = el("button", "step"); b.type = "button"; b.id = "step-" + d.id;
+    b.setAttribute("aria-pressed", "false");
+    b.appendChild(el("span", "n", String(d.n).padStart(2, "0") + " · " + d.k));
+    b.appendChild(el("span", "q", d.q));
+    b.appendChild(el("span", "k", d.title));
+    b.addEventListener("click", function(){
+      state.step = state.step === d.n ? 0 : d.n;
+      if (state.step){ state.aud = "tutti"; state.feat = "tutte"; syncChips(); }
+      apply();
+    });
+    li.appendChild(b); ladder.appendChild(li);
+  });
+
+  function buildChips(container, list, key){
+    list.forEach(function(item){
+      var b = el("button", "chip", item.label); b.type = "button"; b.id = "chip-" + key + "-" + item.id;
+      b.addEventListener("click", function(){ state[key] = item.id; state.step = 0; syncChips(); apply(); });
+      container.appendChild(b);
+    });
+  }
+  buildChips(document.getElementById("fAudience"), AUD, "aud");
+  buildChips(document.getElementById("fFeat"), FEAT, "feat");
+  function syncChips(){
+    document.querySelectorAll("#fAudience .chip").forEach(function(c){ c.setAttribute("aria-pressed", String(c.id === "chip-aud-" + state.aud)); });
+    document.querySelectorAll("#fFeat .chip").forEach(function(c){ c.setAttribute("aria-pressed", String(c.id === "chip-feat-" + state.feat)); });
+  }
+  syncChips();
+
+  function matches(d){
+    if (state.step) return d.n === state.step;
+    return (state.aud === "tutti" || d.aud.indexOf(state.aud) !== -1) && (state.feat === "tutte" || d.feat.indexOf(state.feat) !== -1);
+  }
+  function visible(){ return DASH.filter(matches); }
+  function reset(){ state.aud = "tutti"; state.feat = "tutte"; state.step = 0; syncChips(); apply(); }
+
+  function apply(){
+    var n = 0;
+    DASH.forEach(function(d){ var s = matches(d); d.el.hidden = !s; if (s) n++; });
+    document.querySelectorAll(".step").forEach(function(b){ b.setAttribute("aria-pressed", String(b.id === "step-" + (DASH[state.step-1] || {}).id)); });
+    document.getElementById("empty").hidden = n !== 0;
+    countEl.textContent = "";
+    if (n === DASH.length) countEl.textContent = DASH.length + " dashboard";
+    else {
+      countEl.appendChild(document.createTextNode(n + " dashboard su " + DASH.length + " · "));
+      var r = el("button", null, "mostra tutte"); r.type = "button"; r.addEventListener("click", reset);
+      countEl.appendChild(r);
+    }
+    requestAnimationFrame(fitThumbs);
+  }
+
+  DASH.forEach(function(d){
+    var art = el("article", "tile"); art.id = "tile-" + d.id;
+    var thumb = el("div", "thumb");
+    thumb.appendChild(el("span", "loading", "Anteprima"));
+    var fr = document.createElement("iframe");
+    fr.src = d.file + "#thumb"; fr.title = "Anteprima: " + d.title;
+    fr.setAttribute("loading", "lazy"); fr.setAttribute("tabindex", "-1"); fr.setAttribute("aria-hidden", "true"); fr.setAttribute("scrolling", "no");
+    thumb.appendChild(fr);
+    thumb.appendChild(el("span", "who", d.who));
+    thumb.appendChild(el("span", "open-hint", "Apri →"));
+    art.appendChild(thumb);
+    var body = el("div", "tile-body");
+    body.appendChild(el("span", "qline", String(d.n).padStart(2, "0") + " · " + d.q));
+    body.appendChild(el("h3", null, d.title));
+    body.appendChild(el("p", null, d.desc));
+    var tags = el("div", "tags"); d.tags.forEach(function(t){ tags.appendChild(el("span", null, t)); }); body.appendChild(tags);
+    var vs = el("p", "vs"); vs.appendChild(el("b", null, "Rispetto a Excel")); vs.appendChild(document.createTextNode(d.vs)); body.appendChild(vs);
+    art.appendChild(body);
+    var open = el("button", "tile-open"); open.type = "button";
+    open.setAttribute("aria-label", "Apri la dashboard: " + d.title);
+    open.addEventListener("click", function(){ openViewer(d.id, open); });
+    art.appendChild(open);
+    d.el = art; d.thumb = thumb; grid.appendChild(art);
+  });
+  var empty = el("p", "empty", "Nessuna dashboard con questa combinazione di filtri."); empty.id = "empty"; empty.hidden = true; grid.appendChild(empty);
+
+  function fitThumbs(){ DASH.forEach(function(d){ var w = d.thumb.clientWidth; if (w) d.thumb.style.setProperty("--s", (w / 1440).toFixed(4)); }); }
+  if ("ResizeObserver" in window){ var ro = new ResizeObserver(fitThumbs); DASH.forEach(function(d){ ro.observe(d.thumb); }); }
+  else window.addEventListener("resize", fitThumbs);
+  fitThumbs(); apply();
+
+  /* ---------- Visualizzatore ---------- */
+  var viewer = document.getElementById("viewer"), vFrame = document.getElementById("vFrame");
+  var vTitle = document.getElementById("vTitle"), vWho = document.getElementById("vWho");
+  var vTab = document.getElementById("vTab"), vFull = document.getElementById("vFull");
+  var current = null, returnFocus = null;
+  if (!document.fullscreenEnabled && !document.webkitFullscreenEnabled) vFull.hidden = true;
+  if (!embedded) vTab.hidden = false;
+  function byId(id){ for (var i = 0; i < DASH.length; i++) if (DASH[i].id === id) return DASH[i]; return null; }
+  function setHash(h){ try { history.replaceState(null, "", h ? "#" + h : location.pathname + location.search); } catch(e){} }
+
+  function openViewer(id, from){
+    var d = byId(id); if (!d) return;
+    if (from) returnFocus = from;
+    current = d;
+    vTitle.textContent = d.title;
+    vWho.textContent = String(d.n).padStart(2, "0") + " · " + d.q;
+    vTab.href = d.file; vFrame.title = d.title; vFrame.src = d.file;
+    viewer.hidden = false; document.body.classList.add("viewer-open");
+    setHash(d.id);
+    document.getElementById("vClose").focus();
+  }
+  vFrame.addEventListener("load", function(){ if (!viewer.hidden){ try { vFrame.focus(); } catch(e){} } });
+  function closeViewer(){
+    var last = current;
+    viewer.hidden = true; document.body.classList.remove("viewer-open");
+    vFrame.src = "about:blank"; current = null; setHash("");
+    paintThemeBtn(); /* il tema può essere stato cambiato dentro la dashboard */
+    try { var t = localStorage.getItem("ba-theme"); if (t === "dark" || t === "light"){ document.documentElement.dataset.theme = t; paintThemeBtn(); } } catch(e){}
+    var target = (last && !last.el.hidden) ? last.el.querySelector(".tile-open") : returnFocus;
+    if (target){ try { target.focus(); } catch(e){} }
+  }
+  function step(dir){
+    if (!current) return;
+    var list = visible(); if (list.indexOf(current) === -1) list = DASH;
+    var i = list.indexOf(current);
+    openViewer(list[(i + dir + list.length) % list.length].id);
+  }
+  document.getElementById("vClose").addEventListener("click", closeViewer);
+  document.getElementById("vPrev").addEventListener("click", function(){ step(-1); });
+  document.getElementById("vNext").addEventListener("click", function(){ step(1); });
+  vFull.addEventListener("click", function(){
+    var fn = vFrame.requestFullscreen || vFrame.webkitRequestFullscreen; if (!fn) return;
+    try { var p = fn.call(vFrame); if (p && p.catch) p.catch(function(){}); } catch(e){}
+  });
+  document.addEventListener("keydown", function(e){ if (!viewer.hidden && e.key === "Escape"){ e.preventDefault(); closeViewer(); } });
+
+  var start = (location.hash || "").replace("#", "");
+  if (start && byId(start)) openViewer(start);
+})();
+</script>
+</body>
+</html>

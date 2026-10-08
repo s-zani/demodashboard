@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Clienti a rischio</title>
+<meta name="description" content="Banca Aurora: modello di rischio di abbandono, scelta della soglia di contatto, simulatore di convenienza della campagna e lista d'azione.">
+<script>
+(function(){var h=document.documentElement;
+  if(location.hash==='#thumb'){h.classList.add('is-thumb');}
+  try{if(window.self!==window.top){h.classList.add('is-embedded');}}catch(e){h.classList.add('is-embedded');}
+})();
+</script>
+<script>
+(function(){var h=document.documentElement,t=null;
+  if(h.classList.contains('is-thumb')){t='light';}
+  else{
+    try{t=localStorage.getItem('ba-theme');}catch(e){t=null;}
+    if(t!=='light'&&t!=='dark'){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}
+  }
+  h.dataset.theme=t;
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,500&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+:root{ /* tema chiaro (default) */
+  --bg:#F3F5F8; --surface:#FCFCFD; --surface-2:#EDF0F5; --ink:#131A2A; --ink-2:#465068; --muted:#5F6A80; --line:#D8DDE6;
+  --brand:#16294D; --aurora:#D9572B; --aurora-soft:#FBE4D9; --focus:#D9572B;
+  --good:#127A3E; --bad:#B8322A; --warn:#9A6400;
+  --s1:#2463B0; --s2:#E0623A; --s3:#1A9A78; --s4:#B98314; --s5:#8A5CC4;
+  --heat-0:#FCEFE8; --heat-1:#F7CDB8; --heat-2:#EFA27F; --heat-3:#E0623A; --heat-4:#B4441F; --heat-5:#7E2E14;
+  --font:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --bg:#0D1220; --surface:#151C2E; --surface-2:#1C2539; --ink:#EDF0F6; --ink-2:#B9C1D3; --muted:#97A0B5; --line:#2A344C;
+  --brand:#A9C1EE; --aurora:#F08A58; --aurora-soft:#3A2418; --focus:#F08A58;
+  --good:#3CC27A; --bad:#F07A6E; --warn:#E2B04A;
+  --s1:#3F84D6; --s2:#E0643A; --s3:#20A07B; --s4:#B98617; --s5:#9776D6;
+  --heat-0:#241B1A; --heat-1:#4A2A1E; --heat-2:#7A3A20; --heat-3:#B04A24; --heat-4:#E0643A; --heat-5:#F6A37F;
+  color-scheme:dark;
+}
+
+/* ---------- Cromatura demo (identica in ogni file) ---------- */
+.dc-back,.dc-hint{position:fixed;z-index:9000;font:500 14px/1.4 "IBM Plex Sans",system-ui,sans-serif}
+.dc-back{top:12px;left:12px;padding:7px 12px;border-radius:999px;background:rgba(19,26,42,.86);color:#EDF0F6;text-decoration:none}
+.dc-back:focus-visible,.dc-hint summary:focus-visible{outline:2px solid #F08A58;outline-offset:2px}
+.dc-hint{left:12px;bottom:12px;max-width:330px;background:rgba(19,26,42,.92);color:#EDF0F6;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.dc-hint summary{cursor:pointer;list-style:none;padding:9px 14px;font-weight:600}
+.dc-hint summary::-webkit-details-marker{display:none}
+.dc-hint summary::before{content:"?";display:inline-grid;place-items:center;width:18px;height:18px;margin-right:8px;border-radius:50%;background:#F08A58;color:#131A2A;font-size:12px;font-weight:700}
+.dc-hint ul{margin:0;padding:0 16px 12px 32px}.dc-hint li{margin:5px 0;color:rgba(237,240,246,.9)}
+html.is-embedded .dc-back,html.is-thumb .dc-back,html.is-thumb .dc-hint{display:none}
+@media print{.dc-back,.dc-hint{display:none}}
+
+/* ---------- Base ---------- */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 var(--font);padding-bottom:72px;overflow-x:hidden}
+h1,h2,h3{margin:0;line-height:1.25}
+p{margin:0}
+a{color:var(--s1)}
+b,strong{font-weight:600}
+button,input{font-family:inherit}
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums}
+
+/* Logo */
+.ba-brand{display:inline-flex;align-items:center;gap:8px}
+.ba-mark{width:26px;height:26px}
+.ba-word{font-weight:700;letter-spacing:-.01em;color:var(--brand);font-size:17px;white-space:nowrap}
+
+/* ---------- Header ---------- */
+.hdr{background:var(--surface);border-bottom:1px solid var(--line)}
+.hdr-in{max-width:1440px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;flex-wrap:wrap;gap:10px 22px}
+html:not(.is-embedded):not(.is-thumb) .hdr-in{padding-left:136px}
+.hdr-sep{width:1px;align-self:stretch;background:var(--line)}
+.hdr-title h1{font-size:21px;font-weight:700;letter-spacing:-.01em}
+.hdr-q{font-size:15px;color:var(--ink-2)}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.badge{font-size:13px;font-weight:500;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:6px 12px;white-space:nowrap}
+
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:8px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:600 15px/1.2 var(--font);cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn svg{width:18px;height:18px;flex:none}
+.btn-sm{min-height:34px;padding:6px 11px;font-size:14px;font-weight:500;color:var(--ink-2)}
+.btn-sm[aria-pressed="true"]{background:var(--surface-2);color:var(--ink);border-color:var(--ink-2)}
+.btn-primary{background:var(--brand);border-color:var(--brand);color:var(--surface)}
+.btn-primary:hover{background:var(--brand);filter:brightness(1.12)}
+.btn[disabled]{opacity:.55;cursor:default;filter:none}
+:root[data-theme="dark"] .ic-moon,:root:not([data-theme="dark"]) .ic-sun{display:none}
+
+/* ---------- Layout ---------- */
+.wrap{max-width:1440px;margin:0 auto;padding:0 24px}
+.err{margin-top:24px;padding:14px 16px;border:1px solid var(--bad);color:var(--bad);border-radius:10px;background:var(--surface)}
+.intro{padding-top:22px}
+.intro .lead{font-size:17px;color:var(--ink-2);max-width:92ch}
+.intro .lead b{color:var(--ink)}
+.sec{margin-top:40px;scroll-margin-top:16px}
+.sec-head{margin-bottom:14px}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.sec-head h2{font-size:25px;font-weight:700;letter-spacing:-.01em;margin-top:4px}
+.sec-head .lead{margin-top:6px;color:var(--ink-2);font-size:16px;max-width:96ch}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 22px}
+.g2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px}
+.p-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px}
+.p-head h3{font-size:19px;font-weight:600}
+.p-sub{font-size:15px;color:var(--ink-2);margin-top:3px}
+.note{font-size:15px;color:var(--ink-2);margin-top:12px}
+.mt{margin-top:26px}
+.lab{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+
+/* KPI band */
+.kpis{margin-top:16px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.kpi{background:var(--surface);padding:16px 20px 18px}
+.kpi .big{font-size:40px;font-weight:600;line-height:1.1;margin-top:6px;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.kpi .big .of{font-size:22px;font-weight:500;color:var(--ink-2)}
+.kpi .sub{font-size:15px;color:var(--ink-2);margin-top:4px}
+.is-good{color:var(--good)} .is-bad{color:var(--bad)}
+
+/* Importance bars */
+.imp{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.imp li{display:grid;grid-template-columns:minmax(200px,310px) minmax(0,1fr) 46px;align-items:center;gap:6px 14px}
+.imp .nm{font-weight:600;font-size:15px;line-height:1.3}
+.imp .dir{display:block;font-weight:400;font-size:15px;color:var(--ink-2)}
+.imp .trk{height:14px;background:var(--surface-2);border-radius:0 4px 4px 0;overflow:hidden}
+.imp .fil{display:block;height:100%;background:var(--s1);border-radius:0 4px 4px 0}
+.imp .v{font-size:14px;color:var(--ink-2);text-align:right;font-variant-numeric:tabular-nums}
+
+/* Charts */
+.chart{width:100%;min-width:0}
+#ch-hist{height:330px}
+#ch-net{height:370px;cursor:crosshair}
+.tab-view{overflow-x:auto}
+.dtab{width:100%;border-collapse:collapse;font-size:15px;font-variant-numeric:tabular-nums}
+.dtab th,.dtab td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:right}
+.dtab th:first-child,.dtab td:first-child{text-align:left}
+.dtab th{font-size:13px;font-weight:600;color:var(--ink-2);background:var(--surface-2)}
+.dtab tr.hl td{font-weight:600;background:var(--aurora-soft)}
+
+/* Honest line */
+.honest{margin-top:16px;padding:14px 18px;background:var(--surface);border:1px solid var(--line);border-radius:12px;font-size:16px}
+.honest .lab{display:block;margin-bottom:4px}
+.honest .expl{display:block;color:var(--ink-2);font-size:15px;margin-top:4px}
+
+/* Sliders */
+.ctl{margin-top:4px}
+.ctl + .ctl{margin-top:18px}
+.ctl-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.ctl-row label{font-weight:600;font-size:16px}
+.ctl-row output{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ctl-help{font-size:15px;color:var(--ink-2);margin-top:2px}
+.big-lab{display:block;font-size:20px;font-weight:600;line-height:1.3}
+.big-lab output{display:inline-block;min-width:3.2ch;color:var(--aurora);font-size:30px;font-weight:700;font-variant-numeric:tabular-nums}
+.rng{-webkit-appearance:none;appearance:none;width:100%;height:34px;margin:6px 0 0;background:transparent;cursor:pointer;--pct:50%}
+.rng::-webkit-slider-runnable-track{height:8px;border-radius:999px;border:1px solid var(--line);background:linear-gradient(to right,var(--aurora) 0,var(--aurora) var(--pct),var(--surface-2) var(--pct),var(--surface-2) 100%)}
+.rng::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:24px;margin-top:-9px;border-radius:50%;background:var(--surface);border:4px solid var(--aurora)}
+.rng::-moz-range-track{height:8px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2)}
+.rng::-moz-range-progress{height:8px;border-radius:999px;background:var(--aurora)}
+.rng::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:var(--surface);border:4px solid var(--aurora)}
+.rng:focus-visible{outline:2px solid var(--focus);outline-offset:4px;border-radius:8px}
+.rng-scale{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+
+/* Section 2 */
+.s2-text{font-size:18px;line-height:1.5;margin-top:16px}
+.s2-text b{font-size:20px}
+.stk + .stk{margin-top:18px}
+.stk-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:15px;margin-bottom:6px}
+.stk-head span:first-child{font-weight:600}
+.stk-head span:last-child{color:var(--ink-2)}
+.stk-bar{display:flex;height:30px;border-radius:6px;overflow:hidden;background:var(--surface-2)}
+.seg{display:block;height:100%;transition:width .25s ease}
+.seg-c1{background:var(--s2)}
+.seg-c2{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--s2) 30%,transparent) 0 6px,transparent 6px 12px);box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--s2) 70%,transparent)}
+.seg-a1{background:var(--s1)}
+.seg-a2{background:color-mix(in srgb,var(--s1) 16%,var(--surface))}
+.stk-leg{display:flex;flex-wrap:wrap;gap:4px 18px;margin-top:7px;font-size:15px;color:var(--ink-2)}
+.stk-leg b{color:var(--ink)}
+.sw{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:6px}
+.today{display:flex;align-items:center;gap:16px;margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+.today .big{font-size:48px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;color:var(--ink)}
+.today p{font-size:15px;color:var(--ink-2)}
+.today p b{color:var(--ink);font-size:16px}
+
+/* Section 3 */
+.sim{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:28px}
+.ipo{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);margin-bottom:10px}
+.be{margin-top:20px;padding:12px 14px;background:var(--surface-2);border-radius:10px;font-size:15px}
+.be b{font-size:16px}
+.best-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-top:14px}
+.best-row .p-sub{margin:0}
+.sim-out{border-left:1px solid var(--line);padding-left:28px}
+.net{font-size:56px;font-weight:700;line-height:1.05;margin-top:6px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.net-note{font-size:17px;font-weight:600;margin-top:4px}
+.ledger{margin:18px 0 0;display:grid;grid-template-columns:minmax(0,1fr) auto;border-top:1px solid var(--line)}
+.ledger dt,.ledger dd{margin:0;padding:9px 0;border-bottom:1px solid var(--line)}
+.ledger dt{font-size:15px;font-weight:600}
+.ledger dt span{display:block;font-weight:400;font-size:15px;color:var(--ink-2)}
+.ledger dd{text-align:right;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;padding-left:16px;align-self:stretch;display:flex;align-items:center;justify-content:flex-end;white-space:nowrap}
+.ledger .tot{font-size:17px}
+.ledger dd.tot{font-size:20px}
+
+/* Section 4 */
+.rules{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.rule{text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 13px;cursor:pointer;color:var(--ink);font:inherit;display:flex;flex-direction:column;gap:3px}
+.rule:hover{background:var(--surface-2)}
+.rule[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);background:var(--surface-2)}
+.rule .rn{font-size:26px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.rule .ra{font-size:15px;font-weight:600;line-height:1.3}
+.rule .rw{font-size:15px;color:var(--ink-2);line-height:1.35}
+.rule[disabled]{cursor:default;opacity:.6}
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;margin-bottom:12px}
+.srch{flex:1 1 280px;max-width:440px;position:relative}
+.srch input{width:100%;min-height:42px;padding:8px 12px 8px 38px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink);font-size:16px}
+.srch input::placeholder{color:var(--muted)}
+.srch svg{position:absolute;left:12px;top:50%;width:18px;height:18px;transform:translateY(-50%);color:var(--ink-2)}
+.cnt{font-size:15px;color:var(--ink-2);margin-right:auto}
+.stato{font-size:14px;color:var(--good);min-width:1px}
+.tbl-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.tbl{width:100%;border-collapse:collapse;min-width:900px;font-variant-numeric:tabular-nums}
+.tbl th{background:var(--surface-2);text-align:left;padding:0;border-bottom:1px solid var(--line);font-size:13px;font-weight:600;color:var(--ink-2);white-space:nowrap}
+.tbl th > span,.th-btn{display:flex;align-items:center;gap:6px;padding:11px 14px;font:600 13px/1.2 var(--font);letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2)}
+.th-btn{width:100%;background:none;border:0;cursor:pointer;text-align:left}
+.th-btn:hover{color:var(--ink)}
+.th-btn .si{font-size:14px;color:var(--ink)}
+.tbl td{padding:10px 14px;border-bottom:1px solid var(--line);font-size:15px;vertical-align:middle}
+.tbl tbody tr:last-child td{border-bottom:0}
+.tbl tbody tr:hover td{background:var(--surface-2)}
+.tbl .rk{color:var(--ink-2);width:44px}
+.tbl .nm{font-weight:600;white-space:nowrap}
+.tbl .id{font-family:var(--mono);font-size:14px;color:var(--ink-2);white-space:nowrap}
+.risk{display:flex;align-items:center;gap:10px;min-width:170px}
+.risk .rb{flex:none;width:90px;height:10px;border-radius:999px;background:var(--surface-2);overflow:hidden}
+.risk .rb i{display:block;height:100%;background:var(--heat-3);border-radius:999px}
+.risk b{min-width:52px;text-align:right;font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-block;padding:3px 10px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);font-size:14px;line-height:1.4;white-space:nowrap}
+.chip span{color:var(--ink-2)}
+.az{font-weight:600;white-space:nowrap}
+.empty td{text-align:center;color:var(--ink-2);padding:28px}
+
+/* Footer */
+.foot{max-width:1440px;margin:48px auto 0;padding:18px 24px 0;border-top:1px solid var(--line);font-size:15px;color:var(--ink-2);display:flex;flex-wrap:wrap;gap:6px 24px;justify-content:space-between}
+
+/* ---------- Responsive ---------- */
+@media (max-width:1180px){
+  .rules{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (max-width:1020px){
+  .g2,.sim{grid-template-columns:minmax(0,1fr)}
+  .sim-out{border-left:0;padding-left:0;border-top:1px solid var(--line);padding-top:20px}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:640px){
+  html:not(.is-embedded):not(.is-thumb) .hdr-in{padding-left:16px;padding-top:56px}
+  .hdr-in{padding:12px 16px}
+  .hdr-sep{display:none}
+  .hdr-right{margin-left:0}
+  .wrap{padding:0 16px}
+  .foot{padding:18px 16px 0}
+  .panel{padding:16px}
+  .kpis{grid-template-columns:minmax(0,1fr)}
+  .kpi .big{font-size:36px}
+  .sec-head h2{font-size:22px}
+  .imp li{grid-template-columns:minmax(0,1fr) 40px}
+  .imp .nm{grid-column:1 / -1}
+  .rules{grid-template-columns:minmax(0,1fr)}
+  .net{font-size:44px}
+  .today .big{font-size:40px}
+  .big-lab{font-size:18px}
+  .p-head{flex-wrap:wrap}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{transition:none!important;animation:none!important}
+}
+html.is-thumb{scroll-behavior:auto}
+html.is-thumb *{transition:none!important;animation:none!important}
+@media print{
+  body{padding-bottom:0}
+  .btn,.toolbar,.rules{display:none}
+  .tbl-wrap{max-height:none;overflow:visible}
+}
+</style>
+</head>
+<body>
+<a class="dc-back" href="../index.html">← Galleria</a>
+<details class="dc-hint"><summary>Cosa provare</summary><ul>
+  <li>Muovi la soglia al passo 2: guarda quanti clienti che hanno chiuso avresti intercettato e quanti falsi allarmi.</li>
+  <li>Porta la soglia al <span id="hint-best">17%</span> (pulsante «Usa la soglia più conveniente»): è la più conveniente, <span id="hint-best-net">+1.061 €</span>.</li>
+  <li>Poi abbassa il valore del cliente: già a <span id="hint-ve">140 €</span> la campagna va in perdita (il numero diventa rosso).</li>
+  <li>Clicca su un'azione sopra la lista (per esempio il cashback) e premi «Scarica CSV».</li>
+</ul></details>
+
+<header class="hdr">
+  <div class="hdr-in">
+    <span class="ba-brand"><svg viewBox="0 0 32 32" aria-hidden="true" class="ba-mark"><path d="M6 21a10 10 0 0 1 20 0z" fill="var(--aurora)"/><rect x="3" y="23.5" width="26" height="2.6" rx="1.3" fill="var(--brand)"/></svg><span class="ba-word">Banca Aurora</span></span>
+    <span class="hdr-sep" aria-hidden="true"></span>
+    <div class="hdr-title">
+      <h1>Clienti a rischio</h1>
+      <p class="hdr-q">Chi rischia di andarsene e quanto conviene intervenire?</p>
+    </div>
+    <div class="hdr-right">
+      <span class="badge" id="badge-dati">Clienti_Banca_Aurora.xlsx</span>
+      <button type="button" class="btn" id="btn-tema" aria-label="Passa al tema scuro">
+        <svg class="ic-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.6A8 8 0 0 1 9.4 4 8 8 0 1 0 20 14.6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        <svg class="ic-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span id="tema-txt">Tema scuro</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+  <p class="err" id="errore-dati" hidden>Non riesco a caricare i dati (../data/clienti_banca_aurora.js). Controlla che la cartella «data» sia accanto a «dashboard».</p>
+
+  <!-- ===== SINTESI ===== -->
+  <section class="intro" aria-labelledby="intro-lead">
+    <p class="lead" id="intro-lead">Un modello stima per ogni cliente la probabilità di chiudere la carta. Scegli chi contattare e verifica se la campagna di fidelizzazione conviene.</p>
+    <div class="kpis" role="group" aria-label="Sintesi con le impostazioni attuali">
+      <div class="kpi">
+        <p class="lab">Da contattare oggi</p>
+        <p class="big" id="kpi-contatti">–</p>
+        <p class="sub" id="kpi-contatti-sub"></p>
+      </div>
+      <div class="kpi">
+        <p class="lab">Chiusi che avremmo intercettato</p>
+        <p class="big"><span id="kpi-int">–</span><span class="of" id="kpi-int-of"></span></p>
+        <p class="sub" id="kpi-int-sub"></p>
+      </div>
+      <div class="kpi">
+        <p class="lab">Risultato netto della campagna</p>
+        <p class="big" id="kpi-net">–</p>
+        <p class="sub" id="kpi-net-sub"></p>
+      </div>
+      <div class="kpi">
+        <p class="lab">Soglia più conveniente</p>
+        <p class="big" id="kpi-best">–</p>
+        <p class="sub" id="kpi-best-sub"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PASSO 1: MODELLO ===== -->
+  <section class="sec" id="modello" aria-labelledby="s1-t">
+    <div class="sec-head">
+      <p class="eyebrow">Passo 1 · Come funziona il modello</p>
+      <h2 id="s1-t">Il modello assegna a ogni cliente un rischio di abbandono</h2>
+      <p class="lead" id="s1-lead"></p>
+    </div>
+    <div class="g2">
+      <article class="panel" aria-labelledby="imp-t">
+        <div class="p-head">
+          <div>
+            <h3 id="imp-t">Cosa pesa di più nel calcolo del rischio</h3>
+            <p class="p-sub">Barra più lunga = la variabile pesa di più (a parità delle altre).</p>
+          </div>
+          <button type="button" class="btn btn-sm" id="btn-imp-tab" aria-pressed="false" aria-controls="imp-tab">Vista tabella</button>
+        </div>
+        <ol class="imp" id="imp-list"></ol>
+        <div class="tab-view" id="imp-tab" hidden></div>
+        <p class="note" id="imp-note"></p>
+      </article>
+      <article class="panel" aria-labelledby="hist-t">
+        <div class="p-head">
+          <div>
+            <h3 id="hist-t">Il modello separa chi resta da chi chiude</h3>
+            <p class="p-sub" id="hist-sub"></p>
+          </div>
+          <button type="button" class="btn btn-sm" id="btn-hist-tab" aria-pressed="false" aria-controls="hist-tab">Vista tabella</button>
+        </div>
+        <div class="chart" id="ch-hist" role="img" aria-label="Distribuzione del rischio stimato per clienti attivi e clienti che hanno chiuso, in fasce del 10%"></div>
+        <div class="tab-view" id="hist-tab" hidden></div>
+      </article>
+    </div>
+    <p class="honest" id="auc-box"><span class="lab">Quanto è affidabile</span><span id="auc-line"></span><span class="expl" id="auc-expl"></span></p>
+  </section>
+
+  <!-- ===== PASSO 2: SOGLIA ===== -->
+  <section class="sec" id="soglia-sec" aria-labelledby="s2-t">
+    <div class="sec-head">
+      <p class="eyebrow">Passo 2 · Scegli la soglia</p>
+      <h2 id="s2-t">Scegli da quale rischio in su contattare i clienti</h2>
+      <p class="lead">Proviamo la soglia sullo storico: quanti dei clienti che hanno chiuso avremmo segnalato in tempo?</p>
+    </div>
+    <div class="panel g2">
+      <div>
+        <label class="big-lab" for="soglia">Contatto i clienti con rischio sopra il <output id="soglia-out" for="soglia">30%</output></label>
+        <input type="range" class="rng" id="soglia" min="5" max="80" step="1" value="30" aria-valuetext="30%">
+        <div class="rng-scale" aria-hidden="true"><span id="soglia-min">5%</span><span id="soglia-max">80%</span></div>
+        <p class="s2-text" id="s2-text" aria-live="polite"></p>
+        <p class="note" id="s2-prec"></p>
+      </div>
+      <div>
+        <div class="stk">
+          <div class="stk-head"><span>Clienti che hanno chiuso</span><span id="stk-c-tot"></span></div>
+          <div class="stk-bar" id="stk-c-bar" role="img" aria-label=""><span class="seg seg-c1" id="stk-c1"></span><span class="seg seg-c2" id="stk-c2"></span></div>
+          <div class="stk-leg"><span><i class="sw seg-c1"></i><b id="stk-c1-n"></b> intercettati</span><span><i class="sw seg-c2"></i><b id="stk-c2-n"></b> persi (non segnalati)</span></div>
+        </div>
+        <div class="stk">
+          <div class="stk-head"><span>Clienti rimasti</span><span id="stk-a-tot"></span></div>
+          <div class="stk-bar" id="stk-a-bar" role="img" aria-label=""><span class="seg seg-a1" id="stk-a1"></span><span class="seg seg-a2" id="stk-a2"></span></div>
+          <div class="stk-leg"><span><i class="sw seg-a1"></i><b id="stk-a1-n"></b> segnalati (falsi allarmi)</span><span><i class="sw seg-a2"></i><b id="stk-a2-n"></b> non segnalati</span></div>
+        </div>
+        <div class="today">
+          <span class="big" id="oggi-n">–</span>
+          <p><b id="oggi-t">clienti attivi oggi superano la soglia</b><br><span id="oggi-sub"></span> <a href="#lista">Vai alla lista d'azione</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PASSO 3: SIMULATORE ===== -->
+  <section class="sec" id="simulatore" aria-labelledby="s3-t">
+    <div class="sec-head">
+      <p class="eyebrow">Passo 3 · Simula la campagna</p>
+      <h2 id="s3-t">Quanto rende una campagna di fidelizzazione</h2>
+      <p class="lead" id="s3-lead"></p>
+    </div>
+    <div class="panel">
+      <div class="sim">
+        <div>
+          <span class="ipo">Ipotesi (modificabili)</span>
+          <div class="ctl">
+            <div class="ctl-row"><label for="costo">Costo per cliente contattato</label><output id="costo-out" for="costo">15 €</output></div>
+            <input type="range" class="rng" id="costo" min="5" max="60" step="1" value="15" aria-valuetext="15 euro">
+            <p class="ctl-help">Telefonata, omaggio o bonus: quanto spendiamo per ogni contatto.</p>
+          </div>
+          <div class="ctl">
+            <div class="ctl-row"><label for="tratt">Clienti trattenuti grazie alla campagna</label><output id="tratt-out" for="tratt">30%</output></div>
+            <input type="range" class="rng" id="tratt" min="5" max="60" step="1" value="30" aria-valuetext="30%">
+            <p class="ctl-help">Tra i contattati che stavano per chiudere, quanti restano grazie al contatto.</p>
+          </div>
+          <div class="ctl">
+            <div class="ctl-row"><label for="valore">Valore di un cliente trattenuto (margine dei prossimi 3 anni)</label><output id="valore-out" for="valore">300 €</output></div>
+            <input type="range" class="rng" id="valore" min="50" max="800" step="10" value="300" aria-valuetext="300 euro">
+            <p class="ctl-help">Ipotesi dichiarata: margine che un cliente trattenuto porta alla banca nei prossimi 3 anni.</p>
+          </div>
+          <p class="be" id="be-text"></p>
+          <div class="best-row">
+            <button type="button" class="btn btn-primary" id="btn-best">Usa la soglia più conveniente</button>
+            <p class="p-sub" id="best-hint"></p>
+          </div>
+        </div>
+        <div class="sim-out">
+          <p class="lab" id="net-lab">Risultato netto</p>
+          <p class="net" id="net-big" aria-live="polite">–</p>
+          <p class="net-note" id="net-note"></p>
+          <dl class="ledger" id="ledger"></dl>
+        </div>
+      </div>
+
+      <div class="p-head mt">
+        <div>
+          <h3 id="net-t">Risultato netto al variare della soglia</h3>
+          <p class="p-sub">Ogni punto è la campagna che contatta tutti gli attivi sopra quella soglia. Clicca sul grafico per spostare la soglia.</p>
+        </div>
+        <button type="button" class="btn btn-sm" id="btn-net-tab" aria-pressed="false" aria-controls="net-tab">Vista tabella</button>
+      </div>
+      <div class="chart" id="ch-net" role="img" aria-label="Risultato netto della campagna in euro al variare della soglia di rischio dal 5% all'80%"></div>
+      <div class="tab-view" id="net-tab" hidden></div>
+    </div>
+  </section>
+
+  <!-- ===== PASSO 4: LISTA D'AZIONE ===== -->
+  <section class="sec" id="lista" aria-labelledby="s4-t">
+    <div class="sec-head">
+      <p class="eyebrow">Passo 4 · Lista d'azione</p>
+      <h2 id="s4-t">Chi contattare, dal più a rischio</h2>
+      <p class="lead">Motivi = le due leve che alzano di più il rischio di quel cliente. Azione = una regola semplice legata al motivo principale. Clicca un'azione per filtrare la lista.</p>
+    </div>
+    <div class="rules" id="rules" role="group" aria-label="Azioni suggerite: clicca per filtrare"></div>
+    <div class="toolbar">
+      <label class="srch" for="cerca"><span class="sr">Cerca nella lista</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16.5 16.5L21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input type="search" id="cerca" placeholder="Cerca nome, ID, motivo o azione" autocomplete="off">
+      </label>
+      <span class="cnt" id="cnt-azioni" aria-live="polite"></span>
+      <span class="stato" id="copia-stato" role="status" aria-live="polite"></span>
+      <button type="button" class="btn" id="btn-csv">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M5 19h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Scarica CSV</button>
+      <button type="button" class="btn" id="btn-copia">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" fill="none" stroke="currentColor" stroke-width="2"/></svg>Copia</button>
+    </div>
+    <div class="tbl-wrap">
+      <table class="tbl" id="tbl-azioni">
+        <caption class="sr">Clienti attivi sopra la soglia di rischio, con motivi e azione suggerita</caption>
+        <thead>
+          <tr>
+            <th scope="col"><span>#</span></th>
+            <th scope="col" data-k="cliente"><button type="button" class="th-btn" id="sort-cliente" data-k="cliente">Cliente <span class="si" aria-hidden="true"></span></button></th>
+            <th scope="col" data-k="id"><button type="button" class="th-btn" id="sort-id" data-k="id">ID <span class="si" aria-hidden="true"></span></button></th>
+            <th scope="col" data-k="rischio"><button type="button" class="th-btn" id="sort-rischio" data-k="rischio">Rischio <span class="si" aria-hidden="true"></span></button></th>
+            <th scope="col"><span>Motivi principali</span></th>
+            <th scope="col" data-k="azione"><button type="button" class="th-btn" id="sort-azione" data-k="azione">Azione suggerita <span class="si" aria-hidden="true"></span></button></th>
+          </tr>
+        </thead>
+        <tbody id="tbody-azioni"></tbody>
+      </table>
+    </div>
+    <p class="note" id="lista-note"></p>
+  </section>
+</main>
+
+<footer class="foot">
+  <span>Banca Aurora è una banca inventata. Dati di fantasia a scopo dimostrativo.</span>
+  <span id="foot-fonte">Fonte: Clienti_Banca_Aurora.xlsx</span>
+</footer>
+
+<script src="../data/clienti_banca_aurora.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+<script>
+(function(){
+'use strict';
+
+/* ================= Avvio e controlli ================= */
+var root = document.documentElement;
+var THUMB = root.classList.contains('is-thumb');
+var D = window.BANCA_AURORA;
+if(!D || !D.righe || !D.modello){ document.getElementById('errore-dati').hidden = false; return; }
+var HAS_EC = typeof window.echarts !== 'undefined';
+var mqReduce = window.matchMedia ? window.matchMedia('(prefers-reduced-motion: reduce)') : null;
+function anim(){ return !THUMB && !(mqReduce && mqReduce.matches); }
+function $(id){ return document.getElementById(id); }
+
+/* ================= Formati italiani ================= */
+function mkNF(o){
+  var base = { useGrouping: 'always' }; for(var k in o){ base[k] = o[k]; }
+  try{ var f = new Intl.NumberFormat('it-IT', base); f.format(1); return f; }
+  catch(e){ return new Intl.NumberFormat('it-IT', o); }
+}
+var NF0 = mkNF({ maximumFractionDigits: 0 });
+var NF1 = mkNF({ minimumFractionDigits: 1, maximumFractionDigits: 1 });
+var NF2 = mkNF({ minimumFractionDigits: 2, maximumFractionDigits: 2 });
+var MINUS = '−', NBSP = ' ';
+function isZero(s){ return /^[0.,]+$/.test(s); }
+function num(n, f){ f = f || NF0; var s = f.format(Math.abs(n)); return (n < 0 && !isZero(s) ? MINUS : '') + s; }
+function sgn(n, f){ f = f || NF0; var s = f.format(Math.abs(n)); return (isZero(s) ? '' : (n < 0 ? MINUS : '+')) + s; }
+function eur(n){ return num(n) + NBSP + '€'; }
+function seur(n){ return sgn(n) + NBSP + '€'; }
+function pct(x, f){ return num(x * 100, f || NF0) + '%'; }
+function plur(n, s, p){ return n === 1 ? s : p; }
+
+/* ================= Modello di rischio (calcolato qui per tutti i clienti) ================= */
+var M = D.modello, FEAT = M.features;
+
+// Leve su cui la banca può agire: diventano «motivi» e guidano l'azione suggerita
+var LEVE = {
+  contatti:       { motivo: "molti contatti con l'assistenza", dett: function(r){ return r.contatti + ' in 12 mesi'; },          azione: 'Chiamata del responsabile assistenza' },
+  n_trans_12m:    { motivo: 'poche transazioni',              dett: function(r){ return NF0.format(r.n_trans_12m) + ' in 12 mesi'; }, azione: 'Offerta cashback sui pagamenti con carta' },
+  mesi_inattivi:  { motivo: 'molti mesi inattivi',            dett: function(r){ return r.mesi_inattivi + ' mesi su 12'; },      azione: 'Bonus di riattivazione al primo pagamento' },
+  revolving_zero: { motivo: 'nessun uso a rate',              dett: function(){ return 'saldo a rate 0 €'; },                    azione: 'Proposta di rateizzazione a tasso agevolato' },
+  prodotti:       { motivo: 'pochi prodotti',                 dett: function(r){ return r.prodotti + ' ' + plur(r.prodotti, 'prodotto', 'prodotti'); }, azione: 'Consulenza in filiale' }
+};
+var LEVE_KEYS = Object.keys(LEVE).filter(function(k){ return FEAT.indexOf(k) >= 0; });
+var AZ_FALLBACK = 'Telefonata di cortesia del gestore';
+
+// Nomi in italiano semplice per le variabili del modello
+var FINFO = {
+  n_trans_12m:    { nome: 'Numero di pagamenti con la carta', piu: 'Più pagamenti' },
+  importo_12m:    { nome: 'Spesa totale con la carta',        piu: 'Più spesa, a parità di pagamenti' },
+  mesi_inattivi:  { nome: 'Mesi senza usare la carta',        piu: 'Più mesi inattivi' },
+  contatti:       { nome: "Contatti con l'assistenza",        piu: "Più contatti con l'assistenza" },
+  prodotti:       { nome: 'Prodotti della banca',             piu: 'Più prodotti' },
+  revolving_zero: { nome: 'Carta mai usata a rate',           piu: 'Nessun uso a rate' },
+  eta:            { nome: 'Età',                              piu: 'Più età' }
+};
+function finfo(k){
+  if(FINFO[k]) return FINFO[k];
+  var c = (D.campi || []).filter(function(x){ return x.chiave === k; })[0];
+  var n = c ? c.colonna : k; return { nome: n, piu: 'Valore più alto' };
+}
+
+function valoreFeature(r, k){ return k === 'revolving_zero' ? (r.revolving === 0 ? 1 : 0) : r[k]; }
+
+var clienti = D.righe.map(function(r){
+  var logit = M.coef.intercetta, contr = {};
+  FEAT.forEach(function(k){
+    var z = (valoreFeature(r, k) - M.mean[k]) / M.sd[k];
+    contr[k] = M.coef[k] * z; logit += contr[k];
+  });
+  var c = { r: r, rischio: 1 / (1 + Math.exp(-logit)), contr: contr, attivo: r.stato === 'Attivo' };
+  c.motivi = LEVE_KEYS.filter(function(k){ return contr[k] > 0; })
+    .sort(function(a, b){ return contr[b] - contr[a]; })
+    .slice(0, 2)
+    .map(function(k){ return { k: k, testo: LEVE[k].motivo, dett: LEVE[k].dett(r) }; });
+  // Regola: se tra i motivi c'è l'assistenza, prima si risolve il problema; altrimenti azione del motivo principale
+  var mc = c.motivi.filter(function(m){ return m.k === 'contatti'; })[0] || c.motivi[0];
+  c.azione = mc ? LEVE[mc.k].azione : AZ_FALLBACK;
+  c.azK = mc ? mc.k : null;
+  c.nomeCompleto = r.nome + ' ' + r.cognome;
+  c.cerca = norm([r.nome, r.cognome, r.id, c.azione].concat(c.motivi.map(function(m){ return m.testo; })).join(' '));
+  return c;
+});
+var attivi = clienti.filter(function(c){ return c.attivo; });
+var chiusi = clienti.filter(function(c){ return !c.attivo; });
+function norm(s){ return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+function media(arr, k){ return arr.reduce(function(a, c){ return a + c.r[k]; }, 0) / (arr.length || 1); }
+
+// AUC (Mann-Whitney): probabilità che un cliente che ha chiuso abbia rischio più alto di uno rimasto
+var AUC = (function(){
+  var s = 0;
+  chiusi.forEach(function(a){ attivi.forEach(function(b){ s += a.rischio > b.rischio ? 1 : (a.rischio === b.rischio ? 0.5 : 0); }); });
+  return s / ((chiusi.length * attivi.length) || 1);
+})();
+
+// Istogrammi del rischio (fasce del 10%)
+var FASCE = [], hA = [], hC = [];
+for(var i = 0; i < 10; i++){ FASCE.push((i * 10) + '–' + ((i + 1) * 10) + '%'); hA.push(0); hC.push(0); }
+clienti.forEach(function(c){ var b = Math.min(9, Math.floor(c.rischio * 10)); (c.attivo ? hA : hC)[b]++; });
+
+/* ================= Stato ================= */
+var st = { soglia: 30, costo: 15, tratt: 30, valore: 300, q: '', az: null, sortK: 'rischio', sortD: -1 };
+var SOGLIA_MIN = +$('soglia').min, SOGLIA_MAX = +$('soglia').max;
+
+function simula(t){
+  var sel = attivi.filter(function(c){ return c.rischio > t / 100; });
+  var sumr = sel.reduce(function(a, c){ return a + c.rischio; }, 0);
+  var p = st.tratt / 100, saved = sumr * p, val = saved * st.valore, cost = sel.length * st.costo;
+  return { t: t, n: sel.length, sumr: sumr, saved: saved, val: val, cost: cost, net: val - cost, roi: cost > 0 ? val / cost : null };
+}
+function curva(){
+  var out = [];
+  for(var t = SOGLIA_MIN; t <= SOGLIA_MAX; t++){ out.push(simula(t)); }
+  return out;
+}
+function migliore(cv, be){
+  var best = null;
+  cv.forEach(function(p){
+    if(!best || p.net > best.net + 1e-9 ||
+      (Math.abs(p.net - best.net) <= 1e-9 && Math.abs(p.t / 100 - be) < Math.abs(best.t / 100 - be))){ best = p; }
+  });
+  return best;
+}
+
+var calc = {};
+function ricalcola(){
+  var t = st.soglia;
+  calc.int = chiusi.filter(function(c){ return c.rischio > t / 100; }).length;
+  calc.fa = attivi.filter(function(c){ return c.rischio > t / 100; }).length;
+  calc.cv = curva();
+  calc.be = st.costo / ((st.tratt / 100) * st.valore);
+  calc.best = migliore(calc.cv, calc.be);
+  calc.cur = simula(t);
+  calc.lista = attivi.filter(function(c){ return c.rischio > t / 100; }).sort(function(a, b){ return b.rischio - a.rischio; });
+  calc.lista.forEach(function(c, i){ c.rank = i + 1; });
+}
+
+/* ================= Helper DOM (solo textContent) ================= */
+function txt(id, s){ $(id).textContent = s; }
+function rich(el, parts){
+  el.textContent = '';
+  parts.forEach(function(p){
+    if(typeof p === 'string'){ el.appendChild(document.createTextNode(p)); }
+    else { var b = document.createElement(p.tag || 'b'); b.textContent = p.b; if(p.cls) b.className = p.cls; el.appendChild(b); }
+  });
+}
+function mk(tag, cls, text){ var e = document.createElement(tag); if(cls) e.className = cls; if(text != null) e.textContent = text; return e; }
+function tabella(head, rows, hlIndex){
+  var t = mk('table', 'dtab'), th = mk('thead'), tr = mk('tr');
+  head.forEach(function(h){ var c = mk('th', null, h); c.scope = 'col'; tr.appendChild(c); });
+  th.appendChild(tr); t.appendChild(th);
+  var tb = mk('tbody');
+  rows.forEach(function(r, i){
+    var row = mk('tr', hlIndex && hlIndex.indexOf(i) >= 0 ? 'hl' : null);
+    r.forEach(function(v){ row.appendChild(mk('td', null, v)); });
+    tb.appendChild(row);
+  });
+  t.appendChild(tb); return t;
+}
+
+/* ================= Token colore ================= */
+function tok(){
+  var cs = getComputedStyle(root);
+  function g(n){ return cs.getPropertyValue(n).trim(); }
+  return { ink: g('--ink'), ink2: g('--ink-2'), line: g('--line'), surface: g('--surface'), surface2: g('--surface-2'),
+    s1: g('--s1'), s2: g('--s2'), aurora: g('--aurora'), good: g('--good'), bad: g('--bad'),
+    font: '"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif' };
+}
+function tooltipBase(T){
+  return { show: !THUMB, backgroundColor: T.surface, borderColor: T.line, borderWidth: 1, padding: [8, 12],
+    textStyle: { color: T.ink, fontFamily: T.font, fontSize: 14 }, extraCssText: 'box-shadow:none;border-radius:8px;' };
+}
+
+/* ================= Testi statici calcolati ================= */
+function testiFissi(){
+  var nTot = clienti.length, fonte = (D.meta && D.meta.fonte) || 'Clienti_Banca_Aurora.xlsx';
+  txt('badge-dati', NF0.format(nTot) + ' clienti · ' + fonte.split(',')[0]);
+  txt('foot-fonte', 'Fonte: ' + fonte + ' · ' + NF0.format(nTot) + ' clienti. Modello: regressione logistica dimostrativa.');
+  rich($('intro-lead'), ['Un modello stima per ognuno dei ', { b: NF0.format(nTot) }, ' clienti la probabilità di chiudere la carta. Scegli chi contattare e verifica se la campagna di fidelizzazione conviene: tutti i numeri si ricalcolano mentre muovi i cursori.']);
+  var nomi = FEAT.map(function(k){ return finfo(k).nome.toLowerCase(); });
+  rich($('s1-lead'), ['Per ogni cliente il modello combina ', { b: String(FEAT.length) }, ' informazioni (' + nomi.slice(0, -1).join(', ') + (/^[aeiouàèéìòù]/i.test(nomi[nomi.length - 1]) ? ' ed ' : ' e ') + nomi[nomi.length - 1] + ') e restituisce una probabilità di chiudere, da 0% a 100%. Ha «imparato» confrontando i ',
+    { b: NF0.format(chiusi.length) }, ' clienti che hanno chiuso con i ', { b: NF0.format(attivi.length) }, ' rimasti.']);
+  txt('stk-c-tot', NF0.format(chiusi.length) + ' clienti');
+  txt('stk-a-tot', NF0.format(attivi.length) + ' clienti');
+  txt('soglia-min', SOGLIA_MIN + '%'); txt('soglia-max', SOGLIA_MAX + '%');
+  rich($('s3-lead'), ['Contattiamo solo i clienti ', { b: 'attivi' }, ' sopra soglia. Ogni cliente conta per il suo rischio: chi ha un rischio del 60% vale «0,6 clienti che stanno per andarsene».']);
+
+  // AUC
+  rich($('auc-line'), ['Il modello riconosce bene chi ha chiuso (AUC ', { b: num(AUC, NF2) }, ' sugli stessi dati con cui è stato costruito: è un modello dimostrativo, in produzione andrebbe validato su dati nuovi).']);
+  txt('auc-expl', 'Cos\'è l\'AUC: prendi a caso un cliente che ha chiuso e uno rimasto; è la probabilità che il modello dia il rischio più alto a chi ha chiuso (0,5 = tirare a indovinare, 1 = perfetto). Qui succede in ' + NF0.format(Math.round(AUC * 100)) + ' coppie su 100.');
+
+  // Istogramma: messaggio
+  var a10 = hA[0] / attivi.length;
+  var c30 = chiusi.filter(function(c){ return c.rischio > 0.3; }).length / chiusi.length;
+  rich($('hist-sub'), [{ b: pct(a10) }, ' dei clienti attivi ha un rischio sotto il 10%; ', { b: pct(c30) }, ' di chi ha chiuso supera il 30%. Barre in % di ciascun gruppo.']);
+
+  renderImportanza();
+  renderRegole();
+}
+
+/* ================= 1a. Importanza delle variabili ================= */
+function renderImportanza(){
+  var arr = FEAT.map(function(k){ return { k: k, c: M.coef[k], a: Math.abs(M.coef[k]) }; }).sort(function(x, y){ return y.a - x.a; });
+  var max = arr[0].a, list = $('imp-list'); list.textContent = '';
+  arr.forEach(function(o){
+    var fi = finfo(o.k), dir = fi.piu + ' → ' + (o.c > 0 ? 'più' : 'meno') + ' rischio' + (o.a < 0.15 ? ' (effetto minimo)' : '');
+    o.dir = dir;
+    var li = mk('li'), nm = mk('span', 'nm', fi.nome); nm.appendChild(mk('span', 'dir', dir));
+    var trk = mk('span', 'trk'), fil = mk('span', 'fil'); fil.style.width = (o.a / max * 100).toFixed(1) + '%'; trk.appendChild(fil);
+    li.appendChild(nm); li.appendChild(trk); li.appendChild(mk('span', 'v', num(o.a, NF2)));
+    list.appendChild(li);
+  });
+  txt('imp-t', 'Il segnale più forte: ' + finfo(arr[0].k).nome.toLowerCase());
+  // Tabella equivalente
+  var tv = $('imp-tab'); tv.textContent = '';
+  tv.appendChild(tabella(['Variabile', 'Direzione', 'Peso (|coefficiente|)', 'Coefficiente'],
+    arr.map(function(o){ return [finfo(o.k).nome, o.dir, num(o.a, NF2), num(o.c, NF2)]; })));
+  // Nota onesta sulla spesa (effetto «a parità di»)
+  if(M.coef.importo_12m > 0){
+    var mA = media(attivi, 'importo_12m'), mC = media(chiusi, 'importo_12m');
+    rich($('imp-note'), ['Perché «più spesa → più rischio»? Da sola, la spesa alta va con meno abbandoni (in media ', { b: eur(mA) }, ' chi resta, ', { b: eur(mC) }, ' chi chiude). Il modello però legge le variabili insieme: a parità di numero di pagamenti, chi concentra la spesa in pochi acquisti grandi chiude più spesso.']);
+  }
+}
+
+/* ================= 1b. Istogramma ================= */
+var charts = {};
+function mkChart(id, onResize){
+  if(!HAS_EC) return null;
+  var el = $(id), ch = echarts.init(el, null, { renderer: 'svg' });
+  if(window.ResizeObserver){ new ResizeObserver(function(){ ch.resize(); if(onResize) onResize(); }).observe(el); }
+  return ch;
+}
+// Passo delle etichette dell'asse X del grafico netto in base alla larghezza disponibile
+function passoX(){ var w = $('ch-net').clientWidth || 1000; return w < 520 ? 15 : (w < 820 ? 10 : 5); }
+var ultimoPasso = null;
+function renderHist(){
+  var T = tok(), nA = attivi.length, nC = chiusi.length;
+  var pA = hA.map(function(v){ return v / nA * 100; }), pC = hC.map(function(v){ return v / nC * 100; });
+  var maxA = pA.indexOf(Math.max.apply(null, pA)), maxC = pC.indexOf(Math.max.apply(null, pC));
+  function dati(arr, maxI){ return arr.map(function(v, i){
+    return i === maxI ? { value: +v.toFixed(2), label: { show: true, position: 'top', color: T.ink, fontWeight: 600, fontSize: 13, fontFamily: T.font, formatter: function(p){ return num(p.value, NF0) + '%'; } } } : +v.toFixed(2);
+  }); }
+  var nmA = 'Attivi (' + NF0.format(nA) + ')', nmC = 'Chiusi (' + NF0.format(nC) + ')';
+  if(charts.hist){
+    var tt = tooltipBase(T); tt.trigger = 'axis'; tt.axisPointer = { type: 'shadow', shadowStyle: { color: T.surface2, opacity: .6 } };
+    tt.formatter = function(ps){
+      var s = '<div style="font-weight:600;margin-bottom:4px">Rischio ' + ps[0].axisValue + '</div>';
+      ps.forEach(function(p){ var n = p.seriesIndex === 0 ? hA[p.dataIndex] : hC[p.dataIndex];
+        s += '<div>' + p.marker + '<b>' + num(p.value, NF1) + '%</b> ' + (p.seriesIndex === 0 ? 'degli attivi' : 'di chi ha chiuso') + ' · ' + NF0.format(n) + ' ' + plur(n, 'cliente', 'clienti') + '</div>'; });
+      return s; };
+    charts.hist.setOption({
+      animation: anim(), textStyle: { fontFamily: T.font, color: T.ink2 },
+      legend: { top: 0, left: 0, itemWidth: 14, itemHeight: 14, itemGap: 20, textStyle: { color: T.ink, fontSize: 14, fontFamily: T.font }, data: [nmA, nmC] },
+      grid: { left: 8, right: 12, top: 44, bottom: 30, containLabel: true },
+      tooltip: tt,
+      xAxis: { type: 'category', data: FASCE, name: 'Rischio stimato', nameLocation: 'middle', nameGap: 34, nameTextStyle: { color: T.ink2, fontSize: 13 },
+        axisLabel: { color: T.ink2, fontSize: 12, interval: 0, hideOverlap: true }, axisLine: { lineStyle: { color: T.line } }, axisTick: { show: false } },
+      yAxis: { type: 'value', axisLabel: { color: T.ink2, fontSize: 12, formatter: function(v){ return NF0.format(v) + '%'; } },
+        splitLine: { lineStyle: { color: T.line, width: 1, type: 'solid' } } },
+      series: [
+        { name: nmA, type: 'bar', data: dati(pA, maxA), barMaxWidth: 24, barGap: '12%', itemStyle: { color: T.s1, borderRadius: [4, 4, 0, 0] } },
+        { name: nmC, type: 'bar', data: dati(pC, maxC), barMaxWidth: 24, itemStyle: { color: T.s2, borderRadius: [4, 4, 0, 0] } }
+      ]
+    }, true);
+  }
+  var tv = $('hist-tab'); tv.textContent = '';
+  tv.appendChild(tabella(['Fascia di rischio', 'Attivi (n)', 'Attivi (%)', 'Chiusi (n)', 'Chiusi (%)'],
+    FASCE.map(function(f, i){ return [f, NF0.format(hA[i]), num(pA[i], NF1) + '%', NF0.format(hC[i]), num(pC[i], NF1) + '%']; })));
+}
+
+/* ================= KPI di sintesi ================= */
+function renderKPI(){
+  var t = st.soglia, cur = calc.cur, best = calc.best;
+  txt('kpi-contatti', NF0.format(calc.fa));
+  txt('kpi-contatti-sub', plur(calc.fa, 'cliente attivo', 'clienti attivi') + ' con rischio sopra il ' + t + '%');
+  txt('kpi-int', NF0.format(calc.int)); txt('kpi-int-of', ' su ' + NF0.format(chiusi.length));
+  txt('kpi-int-sub', pct(calc.int / chiusi.length) + ' di chi ha chiuso, con la soglia al ' + t + '%');
+  var k = $('kpi-net'); k.textContent = seur(cur.net); k.className = 'big ' + netCls(cur);
+  txt('kpi-net-sub', netTesto(cur, true));
+  if(best.net > 0){
+    txt('kpi-best', best.t + '%'); $('kpi-best').className = 'big';
+    txt('kpi-best-sub', 'risultato netto ' + seur(best.net) + ' con ' + NF0.format(best.n) + ' ' + plur(best.n, 'contatto', 'contatti'));
+  } else {
+    txt('kpi-best', 'nessuna'); $('kpi-best').className = 'big';
+    txt('kpi-best-sub', 'con queste ipotesi la campagna non conviene a nessuna soglia');
+  }
+}
+function netCls(s){ return s.n === 0 ? '' : (s.net >= 0.5 ? 'is-good' : (s.net <= -0.5 ? 'is-bad' : '')); }
+function netTesto(s, breve){
+  if(s.n === 0) return 'nessun cliente da contattare con questa soglia';
+  if(s.net >= 0.5) return '▲ la campagna conviene' + (breve ? '' : ': ogni euro speso ne riporta ' + num(s.roi, NF2));
+  if(s.net <= -0.5) return '▼ la campagna costa più di quanto salva' + (breve ? '' : ': ogni euro speso ne riporta ' + num(s.roi, NF2));
+  return 'la campagna è in pareggio';
+}
+
+/* ================= 2. Soglia ================= */
+function renderSoglia(){
+  var t = st.soglia, nC = chiusi.length, nA = attivi.length, i = calc.int, fa = calc.fa, persi = nC - i;
+  txt('soglia-out', t + '%');
+  var sl = $('soglia'); sl.value = t; sl.setAttribute('aria-valuetext', t + '%'); setPct(sl);
+  txt('s2-t', 'Con la soglia al ' + t + '% avremmo intercettato ' + NF0.format(i) + ' dei ' + NF0.format(nC) + ' clienti che hanno chiuso');
+  var partI = i === 0 ? ['non ne avremmo intercettato nessuno'] : ['ne avremmo ' + plur(i, 'intercettato ', 'intercettati '), { b: NF0.format(i) }];
+  rich($('s2-text'), ['Con questa soglia, tra i ', { b: NF0.format(nC) }, ' clienti che hanno chiuso '].concat(partI)
+    .concat(['; avremmo segnalato anche ', { b: NF0.format(fa) }, ' ' + plur(fa, 'cliente che poi è rimasto.', 'clienti che poi sono rimasti.')]));
+  var tot = i + fa;
+  txt('s2-prec', tot > 0
+    ? 'Su 10 clienti segnalati, circa ' + NF0.format(Math.round(i / tot * 10)) + ' avevano davvero chiuso. Soglia più bassa = più clienti intercettati ma più falsi allarmi. (Stessi dati del modello: nella realtà i risultati sarebbero un po\' peggiori.)'
+    : 'Nessun cliente supera questa soglia.');
+  $('stk-c1').style.width = (i / nC * 100) + '%'; $('stk-c2').style.width = (persi / nC * 100) + '%';
+  $('stk-a1').style.width = (fa / nA * 100) + '%'; $('stk-a2').style.width = ((nA - fa) / nA * 100) + '%';
+  txt('stk-c1-n', NF0.format(i)); txt('stk-c2-n', NF0.format(persi));
+  txt('stk-a1-n', NF0.format(fa)); txt('stk-a2-n', NF0.format(nA - fa));
+  $('stk-c-bar').setAttribute('aria-label', 'Clienti che hanno chiuso: ' + i + ' intercettati, ' + persi + ' persi');
+  $('stk-a-bar').setAttribute('aria-label', 'Clienti rimasti: ' + fa + ' segnalati, ' + (nA - fa) + ' non segnalati');
+  txt('oggi-n', NF0.format(fa));
+  txt('oggi-t', plur(fa, 'cliente attivo oggi supera la soglia', 'clienti attivi oggi superano la soglia'));
+  txt('oggi-sub', 'Sono gli stessi «falsi allarmi» qui sopra: non hanno (ancora) chiuso, ed è su di loro che si interviene.');
+}
+function setPct(el){ var mn = +el.min, mx = +el.max; el.style.setProperty('--pct', ((+el.value - mn) / (mx - mn) * 100) + '%'); }
+
+/* ================= 3. Simulatore ================= */
+function renderSim(){
+  var t = st.soglia, s = calc.cur, best = calc.best, be = calc.be;
+  txt('costo-out', st.costo + NBSP + '€'); $('costo').setAttribute('aria-valuetext', st.costo + ' euro');
+  txt('tratt-out', st.tratt + '%'); $('tratt').setAttribute('aria-valuetext', st.tratt + '%');
+  txt('valore-out', st.valore + NBSP + '€'); $('valore').setAttribute('aria-valuetext', st.valore + ' euro');
+  ['costo', 'tratt', 'valore'].forEach(function(id){ setPct($(id)); });
+
+  // Titolo-messaggio
+  var h;
+  if(best.net <= 0){ h = 'Con queste ipotesi la campagna non conviene a nessuna soglia'; }
+  else if(best.t === t){ h = 'Al ' + t + '% la campagna rende ' + seur(s.net) + ': è la soglia più conveniente'; }
+  else if(s.n === 0){ h = 'Al ' + t + '% non contatti nessuno: al ' + best.t + '% la campagna renderebbe ' + seur(best.net); }
+  else if(s.net < 0){ h = 'Al ' + t + '% la campagna perde ' + eur(-s.net) + ': al ' + best.t + '% renderebbe ' + seur(best.net); }
+  else { h = 'Al ' + t + '% la campagna rende ' + seur(s.net) + '; al ' + best.t + '% arriverebbe a ' + seur(best.net); }
+  txt('s3-t', h);
+
+  // Pareggio per singolo cliente
+  var gain = (st.tratt / 100) * st.valore;
+  if(be < 1){
+    rich($('be-text'), ['Regola del pareggio: contattare un cliente conviene se ', { b: 'rischio × ' + st.tratt + '% × ' + eur(st.valore) }, ' supera il costo di ', { b: eur(st.costo) }, ', cioè se il suo rischio è sopra il ', { b: pct(be) }, '.']);
+  } else {
+    rich($('be-text'), ['Regola del pareggio: anche un cliente sicuro di chiudere vale in media ', { b: eur(gain) }, ' (' + st.tratt + '% × ' + eur(st.valore) + '), meno del costo di ', { b: eur(st.costo) }, ': con queste ipotesi non conviene contattare nessuno.']);
+  }
+  var bb = $('btn-best');
+  if(best.net > 0){
+    bb.textContent = 'Usa la soglia più conveniente (' + best.t + '%)'; bb.disabled = best.t === t;
+    txt('best-hint', best.t === t ? 'Sei già sulla soglia più conveniente.' : '');
+  } else { bb.textContent = 'Usa la soglia più conveniente'; bb.disabled = true; txt('best-hint', 'Nessuna soglia rende la campagna conveniente.'); }
+
+  // Risultato
+  txt('net-lab', 'Risultato netto · soglia ' + t + '%');
+  var nb = $('net-big'); nb.textContent = seur(s.net); nb.className = 'net ' + netCls(s);
+  var nn = $('net-note'); nn.textContent = netTesto(s, false); nn.className = 'net-note ' + netCls(s);
+
+  // Il conto, passo per passo
+  var dl = $('ledger'); dl.textContent = '';
+  function riga(lbl, spieg, val, tot){
+    var dt = mk('dt', tot ? 'tot' : null, lbl); if(spieg) dt.appendChild(mk('span', null, spieg));
+    var dd = mk('dd', tot ? 'tot' : null, val); dl.appendChild(dt); dl.appendChild(dd); return dd;
+  }
+  riga('Clienti contattati', 'attivi con rischio sopra il ' + t + '%', NF0.format(s.n));
+  riga('Costo della campagna', NF0.format(s.n) + ' × ' + eur(st.costo), eur(s.cost));
+  riga('Clienti salvati attesi', 'somma dei rischi (' + num(s.sumr, NF2) + ') × ' + st.tratt + '%', num(s.saved, NF2));
+  riga('Valore salvato', 'clienti salvati attesi × ' + eur(st.valore), eur(s.val));
+  var dd = riga('Risultato netto', eur(s.val) + ' − ' + eur(s.cost), seur(s.net), true); dd.className = 'tot ' + netCls(s);
+  riga('Ritorno', 'euro recuperati per ogni euro speso', s.roi == null ? '–' : num(s.roi, NF2) + NBSP + '€');
+}
+
+function renderNetChart(){
+  var T = tok(), cv = calc.cv, cur = calc.cur, best = calc.best, t = st.soglia;
+  if(charts.net){
+    var ys = cv.map(function(p){ return p.net; }), ymin = Math.min.apply(null, ys), ymax = Math.max.apply(null, ys);
+    var rng = (ymax - ymin) || 1, relCur = (cur.net - ymin) / rng;
+    function alignFor(x){ return x <= SOGLIA_MIN + 8 ? 'left' : (x >= SOGLIA_MAX - 10 ? 'right' : 'center'); }
+    var lblBase = { show: true, color: T.ink, fontFamily: T.font, fontSize: 13, fontWeight: 600, lineHeight: 18, backgroundColor: T.surface, borderColor: T.line, borderWidth: 1, borderRadius: 4, padding: [4, 8] };
+    function L(extra){ var o = {}; for(var k in lblBase) o[k] = lblBase[k]; for(var j in extra) o[j] = extra[j]; return o; }
+    var points = [], lines = [{ yAxis: 0, lineStyle: { color: T.ink2, type: 'dashed', width: 1 }, label: { show: true, position: 'insideStartTop', formatter: 'pareggio', color: T.ink2, fontSize: 12, fontFamily: T.font } }];
+    var bestOk = best.net > 0;
+    if(bestOk && best.t !== t){
+      lines.push({ xAxis: best.t, lineStyle: { color: T.ink2, type: 'dashed', width: 1 }, label: { show: false } });
+      points.push({ coord: [best.t, best.net], symbol: 'circle', symbolSize: 10, itemStyle: { color: T.s1, borderColor: T.surface, borderWidth: 2 },
+        label: L({ position: 'top', distance: 10, align: alignFor(best.t), formatter: 'Soglia più conveniente: ' + best.t + '%\n' + seur(best.net) }) });
+    }
+    var curTxt = (bestOk && best.t === t ? 'Soglia attuale ' + t + '% = la più conveniente' : 'Soglia attuale ' + t + '%') + '\n' + seur(cur.net);
+    var curPos = (bestOk && best.t === t) ? 'top' : (relCur < 0.25 ? 'top' : 'bottom');
+    points.push({ coord: [t, cur.net], symbol: 'circle', symbolSize: 16, itemStyle: { color: T.aurora, borderColor: T.surface, borderWidth: 3 },
+      label: L({ position: curPos, distance: 12, align: alignFor(t), formatter: curTxt }) });
+
+    var tt = tooltipBase(T); tt.trigger = 'axis'; tt.axisPointer = { type: 'line', lineStyle: { color: T.ink2, width: 1 } };
+    tt.formatter = function(ps){ var p = cv[ps[0].dataIndex];
+      return '<b>' + seur(p.net) + '</b> risultato netto<br>soglia ' + p.t + '% · ' + NF0.format(p.n) + ' ' + plur(p.n, 'cliente contattato', 'clienti contattati'); };
+    charts.net.setOption({
+      animation: anim(), animationDurationUpdate: 200, textStyle: { fontFamily: T.font, color: T.ink2 },
+      grid: { left: 12, right: 28, top: 64, bottom: 34, containLabel: true },
+      tooltip: tt,
+      xAxis: { type: 'value', min: SOGLIA_MIN, max: SOGLIA_MAX, interval: (ultimoPasso = passoX()), name: 'Soglia di rischio per il contatto', nameLocation: 'middle', nameGap: 32,
+        nameTextStyle: { color: T.ink2, fontSize: 13 }, axisLabel: { color: T.ink2, fontSize: 12, formatter: '{value}%' },
+        axisLine: { lineStyle: { color: T.line } }, axisTick: { show: false }, splitLine: { show: false } },
+      yAxis: { type: 'value', axisLabel: { color: T.ink2, fontSize: 12, formatter: function(v){ return seur(v); } },
+        splitLine: { lineStyle: { color: T.line, width: 1, type: 'solid' } } },
+      series: [{ type: 'line', name: 'Risultato netto', data: cv.map(function(p){ return [p.t, +p.net.toFixed(2)]; }),
+        showSymbol: false, symbolSize: 8, lineStyle: { width: 2, color: T.s1 }, itemStyle: { color: T.s1 },
+        markLine: { silent: true, symbol: 'none', animation: false, data: lines },
+        markPoint: { silent: true, animation: false, data: points } }]
+    }, true);
+  }
+  // Tabella equivalente (ogni 5% + soglia attuale e più conveniente)
+  var pick = cv.filter(function(p){ return p.t % 5 === 0 || p.t === t || p.t === best.t; });
+  var hl = []; pick.forEach(function(p, i){ if(p.t === t || p.t === best.t) hl.push(i); });
+  var tv = $('net-tab'); tv.textContent = '';
+  tv.appendChild(tabella(['Soglia', 'Clienti contattati', 'Costo', 'Clienti salvati attesi', 'Valore salvato', 'Risultato netto'],
+    pick.map(function(p){ var tag = (p.t === t ? ' (attuale)' : '') + (p.t === best.t && best.net > 0 ? ' (più conveniente)' : '');
+      return [p.t + '%' + tag, NF0.format(p.n), eur(p.cost), num(p.saved, NF2), eur(p.val), seur(p.net)]; }), hl));
+}
+
+/* ================= 4. Lista d'azione ================= */
+var ORD_AZ = LEVE_KEYS.map(function(k){ return LEVE[k].azione; });
+function renderRegole(){
+  var box = $('rules'); box.textContent = '';
+  LEVE_KEYS.forEach(function(k){
+    var b = mk('button', 'rule'); b.type = 'button'; b.dataset.az = LEVE[k].azione; b.id = 'regola-' + k.replace(/_/g, '-');
+    b.setAttribute('aria-pressed', 'false');
+    b.appendChild(mk('span', 'rn', '–'));
+    b.appendChild(mk('span', 'ra', LEVE[k].azione));
+    b.appendChild(mk('span', 'rw', k === 'contatti' ? 'se tra i motivi c\'è «' + LEVE[k].motivo + '» (ha la precedenza)' : 'se il motivo principale è «' + LEVE[k].motivo + '»'));
+    b.addEventListener('click', function(){ st.az = st.az === b.dataset.az ? null : b.dataset.az; renderTabella(); });
+    box.appendChild(b);
+  });
+}
+function vistaLista(){
+  var q = norm(st.q.trim()), parts = q ? q.split(/\s+/) : [];
+  var arr = calc.lista.filter(function(c){
+    if(st.az && c.azione !== st.az) return false;
+    return parts.every(function(p){ return c.cerca.indexOf(p) >= 0; });
+  });
+  var k = st.sortK, d = st.sortD;
+  arr.sort(function(a, b){
+    var r;
+    if(k === 'rischio') r = a.rischio - b.rischio;
+    else if(k === 'id') r = a.r.id - b.r.id;
+    else if(k === 'cliente') r = (a.r.cognome + ' ' + a.r.nome).localeCompare(b.r.cognome + ' ' + b.r.nome, 'it');
+    else if(k === 'azione') r = ORD_AZ.indexOf(a.azione) - ORD_AZ.indexOf(b.azione);
+    return r * d || (b.rischio - a.rischio);
+  });
+  return arr;
+}
+var vista = [];
+function renderTabella(){
+  var t = st.soglia, tot = calc.lista.length;
+  // conteggi per azione
+  var cnt = {}; calc.lista.forEach(function(c){ cnt[c.azione] = (cnt[c.azione] || 0) + 1; });
+  if(st.az && !cnt[st.az]) st.az = null;
+  Array.prototype.forEach.call(document.querySelectorAll('#rules .rule'), function(b){
+    var n = cnt[b.dataset.az] || 0; b.querySelector('.rn').textContent = NF0.format(n);
+    b.setAttribute('aria-pressed', st.az === b.dataset.az ? 'true' : 'false');
+    b.disabled = n === 0 && st.az !== b.dataset.az;
+    b.setAttribute('aria-label', b.dataset.az + ': ' + n + ' ' + plur(n, 'cliente', 'clienti') + (st.az === b.dataset.az ? ', filtro attivo' : ''));
+  });
+  txt('s4-t', NF0.format(tot) + ' ' + plur(tot, 'cliente', 'clienti') + ' da contattare, dal più a rischio');
+
+  vista = vistaLista();
+  var tb = $('tbody-azioni'); tb.textContent = '';
+  if(!vista.length){
+    var tr0 = mk('tr', 'empty'), td0 = mk('td', null, tot ? 'Nessun cliente corrisponde alla ricerca.' : 'Nessun cliente attivo supera la soglia del ' + t + '%.'); td0.colSpan = 6; tr0.appendChild(td0); tb.appendChild(tr0);
+  }
+  var frag = document.createDocumentFragment();
+  vista.forEach(function(c){
+    var tr = mk('tr');
+    tr.appendChild(mk('td', 'rk', NF0.format(c.rank)));
+    tr.appendChild(mk('td', 'nm', c.nomeCompleto));
+    tr.appendChild(mk('td', 'id', String(c.r.id)));
+    var tdR = mk('td'), rk = mk('div', 'risk'), bar = mk('span', 'rb'), fill = mk('i');
+    fill.style.width = (c.rischio * 100).toFixed(1) + '%'; bar.appendChild(fill); rk.appendChild(bar);
+    rk.appendChild(mk('b', null, pct(c.rischio, NF1))); tdR.appendChild(rk); tr.appendChild(tdR);
+    var tdM = mk('td'), ch = mk('div', 'chips');
+    if(!c.motivi.length){ ch.appendChild(mk('span', null, '–')); }
+    c.motivi.forEach(function(m){ var s = mk('span', 'chip', m.testo + ' '); s.appendChild(mk('span', null, '· ' + m.dett)); ch.appendChild(s); });
+    tdM.appendChild(ch); tr.appendChild(tdM);
+    tr.appendChild(mk('td', 'az', c.azione));
+    frag.appendChild(tr);
+  });
+  tb.appendChild(frag);
+  txt('cnt-azioni', vista.length === tot ? NF0.format(tot) + ' ' + plur(tot, 'cliente', 'clienti') + ' sopra il ' + t + '%' : 'Mostro ' + NF0.format(vista.length) + ' di ' + NF0.format(tot) + ' clienti');
+  $('btn-csv').disabled = !vista.length; $('btn-copia').disabled = !vista.length;
+  // intestazioni ordinabili
+  Array.prototype.forEach.call(document.querySelectorAll('#tbl-azioni th[data-k]'), function(th){
+    var on = th.dataset.k === st.sortK;
+    th.setAttribute('aria-sort', on ? (st.sortD > 0 ? 'ascending' : 'descending') : 'none');
+    th.querySelector('.si').textContent = on ? (st.sortD > 0 ? '↑' : '↓') : '';
+  });
+  txt('lista-note', 'I motivi considerano solo le leve su cui la banca può agire (transazioni, mesi inattivi, uso a rate, assistenza, prodotti); spesa ed età pesano nel rischio ma non sono leve d\'azione. Se un cliente ha un solo motivo, ne compare uno.');
+}
+
+/* ===== Esportazioni ===== */
+function righeExport(){
+  return vista.map(function(c){
+    var m = c.motivi.map(function(x){ return x.testo + ' (' + x.dett + ')'; });
+    return [String(c.r.id), c.r.nome, c.r.cognome, NF1.format(c.rischio * 100), m[0] || '', m[1] || '', c.azione];
+  });
+}
+var HEAD_EXP = ['ID cliente', 'Nome', 'Cognome', 'Rischio stimato (%)', 'Motivo 1', 'Motivo 2', 'Azione suggerita'];
+function csvCell(v){ v = String(v); return /[;"\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }
+var statoTimer = null;
+function stato(msg){
+  txt('copia-stato', msg);
+  if(statoTimer) clearTimeout(statoTimer);
+  if(!THUMB) statoTimer = setTimeout(function(){ txt('copia-stato', ''); }, 4000);
+}
+$('btn-csv').addEventListener('click', function(){
+  var lines = [HEAD_EXP].concat(righeExport()).map(function(r){ return r.map(csvCell).join(';'); });
+  var blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  var url = URL.createObjectURL(blob), a = document.createElement('a');
+  a.href = url; a.download = 'clienti_a_rischio_sopra_' + st.soglia + '.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  stato('CSV scaricato: ' + vista.length + ' ' + plur(vista.length, 'riga', 'righe') + '.');
+});
+$('btn-copia').addEventListener('click', function(){
+  var tsv = [HEAD_EXP].concat(righeExport()).map(function(r){ return r.map(function(v){ return String(v).replace(/[\t\r\n]+/g, ' '); }).join('\t'); }).join('\n');
+  var ok = function(){ stato('Copiate ' + vista.length + ' ' + plur(vista.length, 'riga', 'righe') + ': incollale in Excel o nel CRM.'); };
+  function fallback(){
+    var ta = document.createElement('textarea'); ta.value = tsv; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.top = '-1000px';
+    document.body.appendChild(ta); ta.select();
+    var done = false; try{ done = document.execCommand('copy'); }catch(e){ done = false; }
+    ta.remove(); if(done){ ok(); } else { stato('Copia non riuscita: usa «Scarica CSV».'); }
+  }
+  if(navigator.clipboard && window.isSecureContext){ navigator.clipboard.writeText(tsv).then(ok, fallback); } else { fallback(); }
+});
+
+/* ================= «Cosa provare»: cifre calcolate sui valori di partenza ================= */
+function suggerimenti(){
+  var b = calc.best; if(!b || b.net <= 0) return;
+  var sb = simula(b.t), vbe = sb.cost / (sb.sumr * st.tratt / 100);
+  var passo = +$('valore').step || 10, vMin = +$('valore').min;
+  var vNeg = Math.max(vMin, Math.ceil(vbe / passo) * passo - passo); // primo valore del cursore in perdita
+  txt('hint-best', b.t + '%'); txt('hint-best-net', seur(b.net)); txt('hint-ve', eur(vNeg));
+}
+
+/* ================= Controlli ================= */
+function aggiorna(){
+  ricalcola(); renderKPI(); renderSoglia(); renderSim(); renderNetChart(); renderTabella();
+}
+function setSoglia(v){ v = Math.max(SOGLIA_MIN, Math.min(SOGLIA_MAX, Math.round(v))); if(v === st.soglia) return; st.soglia = v; aggiorna(); }
+$('soglia').addEventListener('input', function(e){ setSoglia(+e.target.value); });
+[['costo', 'costo'], ['tratt', 'tratt'], ['valore', 'valore']].forEach(function(p){
+  $(p[0]).addEventListener('input', function(e){ st[p[1]] = +e.target.value; aggiorna(); });
+});
+$('btn-best').addEventListener('click', function(){ if(calc.best && calc.best.net > 0) setSoglia(calc.best.t); });
+$('cerca').addEventListener('input', function(e){ st.q = e.target.value; renderTabella(); });
+Array.prototype.forEach.call(document.querySelectorAll('.th-btn'), function(b){
+  b.addEventListener('click', function(){
+    var k = b.dataset.k;
+    if(st.sortK === k){ st.sortD = -st.sortD; } else { st.sortK = k; st.sortD = k === 'rischio' ? -1 : 1; }
+    renderTabella();
+  });
+});
+
+// Vista tabella / grafico
+function toggleVista(btnId, viewId, chartEl, chartKey){
+  var b = $(btnId);
+  b.addEventListener('click', function(){
+    var on = b.getAttribute('aria-pressed') !== 'true';
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    b.textContent = on ? 'Vista grafico' : 'Vista tabella';
+    $(viewId).hidden = !on; chartEl.hidden = on;
+    if(!on && chartKey && charts[chartKey]) charts[chartKey].resize();
+  });
+}
+toggleVista('btn-imp-tab', 'imp-tab', $('imp-list'));
+toggleVista('btn-hist-tab', 'hist-tab', $('ch-hist'), 'hist');
+toggleVista('btn-net-tab', 'net-tab', $('ch-net'), 'net');
+
+/* ================= Tema ================= */
+function etichettaTema(){
+  var dark = root.dataset.theme === 'dark';
+  txt('tema-txt', dark ? 'Tema chiaro' : 'Tema scuro');
+  $('btn-tema').setAttribute('aria-label', dark ? 'Passa al tema chiaro' : 'Passa al tema scuro');
+}
+function ridisegna(){ renderHist(); renderNetChart(); }
+$('btn-tema').addEventListener('click', function(){
+  var t = root.dataset.theme === 'dark' ? 'light' : 'dark';
+  root.dataset.theme = t;
+  try{ localStorage.setItem('ba-theme', t); }catch(e){}
+  etichettaTema(); ridisegna();
+});
+if(!THUMB && window.matchMedia){
+  var mqDark = window.matchMedia('(prefers-color-scheme: dark)');
+  var onSys = function(e){ var saved = null; try{ saved = localStorage.getItem('ba-theme'); }catch(err){}
+    if(saved !== 'light' && saved !== 'dark'){ root.dataset.theme = e.matches ? 'dark' : 'light'; etichettaTema(); ridisegna(); } };
+  if(mqDark.addEventListener) mqDark.addEventListener('change', onSys);
+}
+if(THUMB){ root.dataset.theme = 'light'; }
+
+/* ================= Primo disegno ================= */
+etichettaTema();
+if(HAS_EC){
+  charts.hist = mkChart('ch-hist');
+  charts.net = mkChart('ch-net', function(){ if(passoX() !== ultimoPasso) renderNetChart(); });
+  charts.net.getZr().on('click', function(e){
+    var px = [e.offsetX, e.offsetY];
+    if(!charts.net.containPixel('grid', px)) return;
+    var v = charts.net.convertFromPixel({ seriesIndex: 0 }, px);
+    if(v && isFinite(v[0])) setSoglia(v[0]);
+  });
+} else {
+  // Senza libreria grafici: mostra direttamente le tabelle
+  [['btn-hist-tab', 'hist-tab', 'ch-hist'], ['btn-net-tab', 'net-tab', 'ch-net']].forEach(function(a){ $(a[0]).hidden = true; $(a[1]).hidden = false; $(a[2]).hidden = true; });
+}
+testiFissi();
+ricalcola();
+suggerimenti();
+renderHist();
+renderKPI(); renderSoglia(); renderSim(); renderNetChart(); renderTabella();
+})();
+</script>
+</body>
+</html>

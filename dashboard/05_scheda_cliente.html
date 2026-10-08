@@ -1,0 +1,1193 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Scheda cliente</title>
+<script>
+(function(){var h=document.documentElement;
+  if(location.hash==='#thumb'){h.classList.add('is-thumb');}
+  try{if(window.self!==window.top){h.classList.add('is-embedded');}}catch(e){h.classList.add('is-embedded');}
+})();
+</script>
+<script>
+/* Tema iniziale prima del disegno: valore salvato, altrimenti preferenza di sistema. In anteprima sempre chiaro. */
+(function(){var h=document.documentElement,t=null;
+  if(h.classList.contains('is-thumb')){h.dataset.theme='light';return;}
+  try{t=localStorage.getItem('ba-theme');}catch(e){}
+  if(t!=='light'&&t!=='dark'){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}
+  h.dataset.theme=t;
+})();
+</script>
+<meta name="description" content="Banca Aurora · scheda di un cliente: rischio di abbandono, perché, confronto con i clienti simili e cosa dirgli al telefono.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,500&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+:root{ /* tema chiaro (default) */
+  --bg:#F3F5F8; --surface:#FCFCFD; --surface-2:#EDF0F5; --ink:#131A2A; --ink-2:#465068; --muted:#5F6A80; --line:#D8DDE6;
+  --brand:#16294D; --aurora:#D9572B; --aurora-soft:#FBE4D9; --focus:#D9572B;
+  --good:#127A3E; --bad:#B8322A; --warn:#9A6400;
+  --s1:#2463B0; --s2:#E0623A; --s3:#1A9A78; --s4:#B98314; --s5:#8A5CC4;
+  --heat-0:#FCEFE8; --heat-1:#F7CDB8; --heat-2:#EFA27F; --heat-3:#E0623A; --heat-4:#B4441F; --heat-5:#7E2E14;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --bg:#0D1220; --surface:#151C2E; --surface-2:#1C2539; --ink:#EDF0F6; --ink-2:#B9C1D3; --muted:#97A0B5; --line:#2A344C;
+  --brand:#A9C1EE; --aurora:#F08A58; --aurora-soft:#3A2418; --focus:#F08A58;
+  --good:#3CC27A; --bad:#F07A6E; --warn:#E2B04A;
+  --s1:#3F84D6; --s2:#E0643A; --s3:#20A07B; --s4:#B98617; --s5:#9776D6;
+  --heat-0:#241B1A; --heat-1:#4A2A1E; --heat-2:#7A3A20; --heat-3:#B04A24; --heat-4:#E0643A; --heat-5:#F6A37F;
+  color-scheme:dark;
+}
+:root{
+  --font:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --band:color-mix(in srgb, var(--ink-2) 30%, var(--surface-2));
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 var(--font);overflow-x:hidden}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+h1,h2,h3,h4{margin:0;color:var(--ink)}
+.mono{font-family:var(--mono);font-weight:500}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.print-only{display:none}
+
+/* ---------- Cromatura demo (identica) ---------- */
+.dc-back,.dc-hint{position:fixed;z-index:9000;font:500 14px/1.4 "IBM Plex Sans",system-ui,sans-serif}
+.dc-back{top:12px;left:12px;padding:7px 12px;border-radius:999px;background:rgba(19,26,42,.86);color:#EDF0F6;text-decoration:none}
+.dc-back:focus-visible,.dc-hint summary:focus-visible{outline:2px solid #F08A58;outline-offset:2px}
+.dc-hint{left:12px;bottom:12px;max-width:330px;background:rgba(19,26,42,.92);color:#EDF0F6;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.dc-hint summary{cursor:pointer;list-style:none;padding:9px 14px;font-weight:600}
+.dc-hint summary::-webkit-details-marker{display:none}
+.dc-hint summary::before{content:"?";display:inline-grid;place-items:center;width:18px;height:18px;margin-right:8px;border-radius:50%;background:#F08A58;color:#131A2A;font-size:12px;font-weight:700}
+.dc-hint ul{margin:0;padding:0 16px 12px 32px}.dc-hint li{margin:5px 0;color:rgba(237,240,246,.9)}
+html.is-embedded .dc-back,html.is-thumb .dc-back,html.is-thumb .dc-hint{display:none}
+@media print{.dc-back,.dc-hint{display:none}}
+
+/* ---------- Header ---------- */
+.app-header{background:var(--surface);border-bottom:1px solid var(--line)}
+.app-header .in{max-width:1440px;margin:0 auto;padding:10px 24px;display:flex;align-items:center;gap:10px 20px;flex-wrap:wrap}
+html:not(.is-embedded):not(.is-thumb) .app-header .in{padding-left:136px}
+.ba-brand{display:inline-flex;align-items:center;gap:8px}
+.ba-mark{width:26px;height:26px}
+.ba-word{font-weight:700;letter-spacing:-.01em;color:var(--brand);font-size:17px}
+.hd-title{display:flex;align-items:baseline;gap:2px 14px;flex-wrap:wrap;min-width:0;padding-left:16px;border-left:1px solid var(--line)}
+.hd-title h1{font-size:20px;font-weight:700;line-height:1.25}
+.hd-title p{margin:0;font-size:16px;color:var(--ink-2);font-weight:500}
+.hd-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.data-badge{font-size:13px;color:var(--ink-2);background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-variant-numeric:tabular-nums}
+
+/* ---------- Bottoni ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:7px 14px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font-weight:500;font-size:15px;line-height:1.2;cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--surface-2)}
+.btn[disabled]{color:var(--ink-2);background:var(--surface-2);cursor:not-allowed}
+.btn svg{width:18px;height:18px;flex:none}
+.btn-sm{min-height:34px;padding:5px 11px;font-size:14px}
+.btn-strong{background:var(--brand);border-color:var(--brand);color:var(--surface);font-weight:600}
+.btn-strong:hover{background:var(--brand);filter:brightness(1.12)}
+.btn-strong[disabled]{filter:none}
+:root[data-theme="dark"] .i-moon,:root:not([data-theme="dark"]) .i-sun{display:none}
+
+/* ---------- Layout ---------- */
+.wrap{max-width:1440px;margin:0 auto;padding:0 24px}
+main.wrap{padding-bottom:8px}
+
+/* ---------- Ricerca + scorrimento ---------- */
+.toolbar{display:flex;flex-wrap:wrap;gap:12px 28px;align-items:flex-end;margin:16px 0 14px}
+.search{flex:1 1 360px;max-width:560px;min-width:0}
+.lbl{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:600;margin:0 0 6px}
+.combo{position:relative}
+.combo input{width:100%;height:46px;padding:0 44px 0 42px;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-size:16px;color:var(--ink)}
+.combo input::placeholder{color:var(--muted);opacity:1}
+.combo input:focus{outline:none;border-color:var(--focus);box-shadow:0 0 0 3px color-mix(in srgb,var(--focus) 28%,transparent)}
+.combo .ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--ink-2);pointer-events:none}
+.kbd{position:absolute;right:10px;top:50%;transform:translateY(-50%);font:600 13px/1 var(--mono);color:var(--ink-2);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:3px 7px;background:var(--surface-2);pointer-events:none}
+.sugg{position:absolute;z-index:60;left:0;right:0;top:calc(100% + 6px);margin:0;padding:6px;list-style:none;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 14px 34px color-mix(in srgb,var(--ink) 20%,transparent);max-height:380px;overflow:auto}
+.sugg li{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;cursor:pointer;min-height:44px}
+.sugg li:hover{background:var(--surface-2)}
+.sugg li[aria-selected="true"]{background:var(--surface-2);box-shadow:inset 0 0 0 2px var(--focus)}
+.sugg .s-av{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;background:var(--surface-2);color:var(--ink);border:1px solid var(--line);flex:none}
+.sugg .s-main{display:flex;flex-direction:column;min-width:0}
+.sugg .s-name{font-weight:600;line-height:1.25}
+.sugg .s-id{font-family:var(--mono);font-size:13px;color:var(--ink-2);line-height:1.3}
+.sugg .s-right{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:13px;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.sugg li.s-info{cursor:default;color:var(--ink-2);font-size:14px;min-height:0}
+.sugg li.s-info:hover{background:none}
+.navbox{min-width:0}
+.nav-row{display:flex;align-items:center;gap:10px}
+.pos{font-size:15px;font-weight:600;min-width:170px;text-align:center;font-variant-numeric:tabular-nums}
+
+/* ---------- Intestazione cliente ---------- */
+.client{display:flex;gap:16px 20px;align-items:flex-start;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 20px}
+.avatar{width:60px;height:60px;border-radius:50%;display:grid;place-items:center;background:var(--brand);color:var(--surface);font-weight:700;font-size:22px;letter-spacing:.02em;flex:none}
+.who{flex:1 1 520px;min-width:0}
+.name-row{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap}
+.name-row h2{font-size:28px;font-weight:700;line-height:1.15;letter-spacing:-.01em}
+.name-row h2:focus{outline:none}
+.idline{margin:3px 0 10px;color:var(--ink-2);font-size:15px}
+.idline .mono{color:var(--ink);font-size:15px}
+.badge{display:inline-flex;align-items:center;gap:7px;padding:3px 11px;border-radius:999px;border:1px solid var(--line);font-size:14px;font-weight:600;background:var(--surface-2);color:var(--ink);white-space:nowrap;line-height:1.4}
+.badge::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--s1);flex:none}
+.badge.chiuso::before{background:var(--s2)}
+.badge.sm{font-size:13px;padding:2px 9px}
+.facts{display:flex;flex-wrap:wrap;gap:8px 26px;margin:0;padding:0;list-style:none}
+.facts li{display:flex;flex-direction:column;min-width:0}
+.facts .k{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:600;line-height:1.4}
+.facts .v{font-size:16px;font-weight:600;font-variant-numeric:tabular-nums}
+.facts2{margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+.facts2 .v{font-weight:500;font-size:15px}
+.client-actions{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.tip{font-size:13px;color:var(--ink-2)}
+
+/* ---------- Colonne e pannelli ---------- */
+.cols{display:grid;grid-template-columns:minmax(0,1.32fr) minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;margin:16px 0 0}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.col-full{grid-column:1/-1}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px;min-width:0}
+.panel-head{display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
+.panel-head > div{min-width:0}
+.eyebrow{margin:0 0 4px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:600}
+.panel h3{font-size:19px;line-height:1.3;font-weight:700}
+.sub{margin:6px 0 12px;color:var(--ink-2);font-size:15px}
+.sub b,.note b{color:var(--ink);font-weight:600}
+.note{margin:12px 0 0;color:var(--ink-2);font-size:14px;line-height:1.45}
+.flag{display:inline-block;margin-left:4px;padding:1px 8px;border-radius:999px;background:var(--surface-2);border:1px solid var(--warn);color:var(--ink);font-size:13px;font-weight:600}
+
+/* Rischio */
+.risk-top{display:flex;align-items:baseline;gap:6px 14px;flex-wrap:wrap;margin:12px 0 4px}
+.risk-num{font-size:60px;font-weight:600;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.risk-band{font-size:19px;font-weight:700}
+.risk-rank{margin:2px 0 0;font-size:15px;color:var(--ink-2)}
+.rbar{position:relative;height:22px;display:flex;margin-top:26px}
+.rbar .seg{height:100%}
+.rbar .seg:first-child{border-radius:6px 0 0 6px}
+.rbar .seg:last-child{border-radius:0 6px 6px 0}
+.rbar .seg + .seg{border-left:2px solid var(--surface)}
+.rbar .mk{position:absolute;top:-12px;bottom:-6px;width:4px;margin-left:-2px;background:var(--ink);border-radius:2px;box-shadow:0 0 0 2px var(--surface)}
+.rbar .mk::before{content:"";position:absolute;top:-9px;left:50%;transform:translateX(-50%);border:8px solid transparent;border-top-color:var(--ink);border-bottom:0}
+.rticks{position:relative;height:20px;margin-top:6px;font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.rticks span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap}
+.rticks span:first-child{transform:none}
+.rticks span:last-child{transform:translateX(-100%)}
+.rlegend{display:flex;flex-wrap:wrap;gap:4px 4px;margin:10px 0 0;padding:0;list-style:none;font-size:13px;color:var(--ink-2)}
+.rlegend li{display:flex;align-items:center;gap:6px;padding:3px 9px 3px 7px;border-radius:999px;border:1px solid transparent;white-space:nowrap}
+.rlegend .sw{width:12px;height:12px;border-radius:3px;flex:none}
+.rlegend li.on{color:var(--ink);font-weight:600;background:var(--surface-2);border-color:var(--line)}
+
+/* Perché */
+.chart{width:100%;height:456px}
+.legend-why{display:flex;flex-wrap:wrap;gap:6px 18px;margin:0 0 4px;padding:0;list-style:none;font-size:14px;color:var(--ink)}
+.legend-why li{display:flex;align-items:center;gap:7px}
+.legend-why .sw{width:14px;height:10px;border-radius:2px}
+
+/* Tabelle */
+.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border:1px solid var(--line);border-radius:10px;max-width:100%}
+table{border-collapse:collapse;width:100%;font-size:15px;font-variant-numeric:tabular-nums}
+caption{text-align:left;padding:10px 12px 0;color:var(--ink-2);font-size:14px}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:600;text-align:left;padding:9px 12px;background:var(--surface-2);border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:bottom}
+td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+tbody tr:last-child td{border-bottom:0}
+th.n,td.n{text-align:right}
+td.nw{white-space:nowrap}
+tfoot td{background:var(--surface-2);border-top:1px solid var(--line);border-bottom:0;font-size:15px}
+.linkbtn{background:none;border:0;padding:2px 0;color:var(--brand);font-weight:600;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:3px;cursor:pointer;text-align:left;font-size:15px}
+.linkbtn:hover{text-decoration-thickness:2px}
+.td-id{display:block;font-family:var(--mono);font-size:13px;color:var(--ink-2);white-space:nowrap}
+.linkbtn{white-space:nowrap}
+
+/* Bullet chart simili */
+.bl-legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:14px;color:var(--ink);margin:0 0 12px;padding:0;list-style:none}
+.bl-legend li{display:flex;align-items:center;gap:7px}
+.sw-band{width:24px;height:10px;background:var(--band);border-radius:3px}
+.sw-med{width:3px;height:16px;background:var(--ink);border-radius:1px}
+.sw-dot{width:13px;height:13px;border-radius:50%;background:var(--s1)}
+.is-chiuso .sw-dot{background:var(--s2)}
+.bullets{display:flex;flex-direction:column;gap:12px}
+.bl-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.bl-name{font-weight:600;font-size:15px}
+.bl-val{font-weight:700;font-size:17px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.bl-plot{display:grid;grid-template-columns:44px minmax(0,1fr) 52px;gap:10px;align-items:center;margin:5px 0 3px}
+.bl-min,.bl-max{font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.bl-min{text-align:right}
+.bl-track{position:relative;height:18px;background:var(--surface-2);border:1px solid var(--line);border-radius:4px}
+.bl-band{position:absolute;top:2px;bottom:2px;background:var(--band);border-radius:3px;min-width:3px}
+.bl-med{position:absolute;top:-4px;bottom:-4px;width:3px;margin-left:-1.5px;background:var(--ink);border-radius:1px}
+.bl-dot{position:absolute;top:50%;width:17px;height:17px;margin:-8.5px 0 0 -8.5px;border-radius:50%;background:var(--s1);border:2px solid var(--surface);box-shadow:0 0 0 1px var(--s1)}
+.is-chiuso .bl-dot{background:var(--s2);box-shadow:0 0 0 1px var(--s2)}
+.bl-txt{margin:0;font-size:14px;color:var(--ink-2)}
+.bl-txt b{color:var(--ink);font-weight:600}
+
+/* Cosa fare */
+.p-act{background:var(--aurora-soft);border-color:color-mix(in srgb,var(--aurora) 40%,var(--line))}
+.p-act .eyebrow{color:var(--ink)}
+.prio-line{margin:6px 0 0;font-size:15px;color:var(--ink)}
+.actions{margin:14px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px;counter-reset:az}
+.actions li{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:11px 14px 11px 46px;position:relative;counter-increment:az}
+.actions li::before{content:counter(az);position:absolute;left:13px;top:11px;width:22px;height:22px;border-radius:50%;background:var(--brand);color:var(--surface);font-size:13px;font-weight:700;display:grid;place-items:center}
+.actions strong{display:block;font-size:16px;font-weight:600}
+.actions span{display:block;color:var(--ink-2);font-size:15px;margin-top:2px}
+.script{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.script-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.script h4{font-size:16px;font-weight:700}
+.script ol{margin:10px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px}
+.script li{font-size:16px;line-height:1.5;padding-left:14px;border-left:3px solid var(--line)}
+.script li .who-says{display:block;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-2);font-weight:600}
+.copy-state{margin:8px 0 0;font-size:14px;color:var(--ink-2);min-height:1.4em}
+.closed-motivo{margin:12px 0 0;padding:12px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;font-size:16px}
+.closed-motivo b{font-weight:700}
+.could{margin:10px 0 0;padding-left:20px}
+.could li{margin:0 0 8px;font-size:15px}
+
+/* Footer */
+.foot{margin-top:28px;border-top:1px solid var(--line);background:var(--surface)}
+.foot .wrap{padding-top:14px;padding-bottom:72px;display:flex;flex-wrap:wrap;gap:4px 24px;font-size:14px;color:var(--ink-2)}
+.foot p{margin:0}
+
+/* ---------- Responsive ---------- */
+@media (max-width:1279px){
+  .cols{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}
+  .col-3{grid-column:1/-1}
+}
+@media (max-width:820px){
+  .cols{grid-template-columns:minmax(0,1fr)}
+  .client-actions{align-items:flex-start}
+}
+@media (max-width:640px){
+  .wrap{padding:0 16px}
+  .app-header .in{padding:10px 16px}
+  html:not(.is-embedded):not(.is-thumb) .app-header .in{padding-left:16px;padding-top:52px}
+  .hd-title{padding-left:0;border-left:0;flex-basis:100%}
+  .hd-right{margin-left:0}
+  .toolbar{gap:14px}
+  .navbox{flex:1 1 100%}
+  .nav-row{display:grid;grid-template-columns:1fr 1fr}
+  .pos{grid-column:1/-1;order:-1;text-align:left;min-width:0}
+  .client{padding:14px 16px}
+  .name-row h2{font-size:24px}
+  .facts{gap:8px 18px}
+  .panel{padding:16px}
+  .risk-num{font-size:52px}
+  .chart{height:560px}
+  .rticks span:first-child{display:none}
+  .panel-head{flex-wrap:wrap}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
+html.is-thumb *{transition:none!important;animation:none!important}
+
+/* ---------- Stampa (Cmd+P) ---------- */
+@media print{
+  :root,:root[data-theme="dark"]{
+    --bg:#F3F5F8; --surface:#FCFCFD; --surface-2:#EDF0F5; --ink:#131A2A; --ink-2:#465068; --muted:#5F6A80; --line:#D8DDE6;
+    --brand:#16294D; --aurora:#D9572B; --aurora-soft:#FBE4D9; --focus:#D9572B;
+    --good:#127A3E; --bad:#B8322A; --warn:#9A6400;
+    --s1:#2463B0; --s2:#E0623A;
+    --heat-0:#FCEFE8; --heat-1:#F7CDB8; --heat-2:#EFA27F; --heat-3:#E0623A; --heat-4:#B4441F; --heat-5:#7E2E14;
+    color-scheme:light;
+  }
+  @page{size:A4;margin:12mm}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  body{background:var(--surface);font-size:14px}
+  .hd-right,.toolbar,.btn-tab,#btn-csv,#btn-copia,.client-actions,.copy-state,.kbd{display:none!important}
+  html:not(.is-embedded):not(.is-thumb) .app-header .in,.app-header .in{padding:0 0 8px}
+  .app-header{border-bottom:2px solid var(--brand);background:none}
+  .wrap{padding:0;max-width:none}
+  .print-only{display:block;margin:6px 0 8px;font-size:12px;color:var(--ink-2)}
+  .cols{display:block;margin:0}
+  .col{display:block}
+  .client,.panel{break-inside:avoid;page-break-inside:avoid;margin:0 0 10px;border-radius:8px;padding:12px 14px}
+  .p-act{background:var(--surface);border:2px solid var(--aurora)}
+  .chart{height:420px}
+  .tablewrap{overflow:visible;border-radius:6px}
+  table{font-size:12.5px} th{white-space:normal;padding:6px 7px} td{padding:6px 7px} .linkbtn{font-size:12.5px;white-space:normal} .screen-only{display:none}
+  .foot{margin-top:6px;background:none}
+  .foot .wrap{padding:8px 0 0}
+  .sugg{display:none!important}
+}
+</style>
+</head>
+<body>
+<a class="dc-back" href="../index.html">← Galleria</a>
+<details class="dc-hint"><summary>Cosa provare</summary><ul>
+  <li>Cerca un cliente per nome, per esempio «Mazza», e scegli con frecce + Invio</li>
+  <li>Premi «Successivo ›» per scorrere i clienti a rischio alto</li>
+  <li>Guarda come cambia il «Perché» da un cliente all'altro</li>
+  <li>Cmd+P stampa la scheda</li>
+</ul></details>
+
+<header class="app-header">
+  <div class="in">
+    <span class="ba-brand"><svg viewBox="0 0 32 32" aria-hidden="true" class="ba-mark"><path d="M6 21a10 10 0 0 1 20 0z" fill="var(--aurora)"/><rect x="3" y="23.5" width="26" height="2.6" rx="1.3" fill="var(--brand)"/></svg><span class="ba-word">Banca Aurora</span></span>
+    <div class="hd-title"><h1>Scheda cliente</h1><p>Cosa dico a questo cliente?</p></div>
+    <div class="hd-right">
+      <span class="data-badge" id="badge-dati">Clienti_Banca_Aurora.xlsx</span>
+      <button class="btn" id="btn-tema" type="button">
+        <svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.6A8 8 0 0 1 9.4 4 8 8 0 1 0 20 14.6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        <svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span id="tema-txt">Tema scuro</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap" id="main">
+  <p class="print-only" id="stampa-info">Scheda cliente · Banca Aurora</p>
+
+  <section class="toolbar" aria-label="Trova un cliente">
+    <div class="search">
+      <label class="lbl" for="cerca">Cerca cliente</label>
+      <div class="combo">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input id="cerca" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="cerca-lista" aria-describedby="cerca-aiuto" autocomplete="off" spellcheck="false" placeholder="Nome, cognome o ID cliente">
+        <kbd class="kbd" aria-hidden="true" title="Premi / per cercare">/</kbd>
+        <ul id="cerca-lista" class="sugg" role="listbox" aria-label="Clienti trovati" hidden></ul>
+      </div>
+      <span class="sr-only" id="cerca-aiuto">Scrivi almeno una lettera, scegli con le frecce e conferma con Invio.</span>
+    </div>
+    <div class="navbox">
+      <span class="lbl" id="nav-lbl">Clienti attivi, dal rischio più alto</span>
+      <div class="nav-row" role="group" aria-labelledby="nav-lbl">
+        <button class="btn" id="btn-prec" type="button">‹ Precedente</button>
+        <span class="pos" id="pos-lista" aria-live="polite"></span>
+        <button class="btn btn-strong" id="btn-succ" type="button">Successivo ›</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="client" id="sez-cliente" aria-labelledby="cli-nome">
+    <div class="avatar" id="cli-iniziali" aria-hidden="true"></div>
+    <div class="who">
+      <div class="name-row"><h2 id="cli-nome" tabindex="-1"></h2><span class="badge" id="cli-stato"></span></div>
+      <p class="idline">ID cliente <span class="mono" id="cli-id"></span></p>
+      <ul class="facts" id="cli-fatti" aria-label="Dati principali"></ul>
+      <ul class="facts facts2" id="cli-fatti2" aria-label="Altri dati"></ul>
+    </div>
+    <div class="client-actions">
+      <button class="btn" id="btn-csv" type="button" aria-label="Scarica CSV della scheda cliente"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Scarica CSV</button>
+      <span class="tip">Cmd+P stampa la scheda</span>
+    </div>
+  </section>
+
+  <div class="cols">
+    <div class="col col-1">
+      <section class="panel" id="sez-rischio" aria-labelledby="t-rischio">
+        <p class="eyebrow">Rischio di abbandono</p>
+        <h3 id="t-rischio"></h3>
+        <div class="risk-top"><span class="risk-num" id="rischio-num"></span><span class="risk-band" id="rischio-fascia"></span></div>
+        <p class="risk-rank" id="rischio-pos"></p>
+        <div class="rbar" id="rischio-barra" role="img"></div>
+        <div class="rticks" id="rischio-tacche" aria-hidden="true"></div>
+        <ul class="rlegend" id="rischio-legenda" aria-label="Fasce di rischio"></ul>
+        <p class="note" id="rischio-nota"></p>
+      </section>
+
+      <section class="panel" id="sez-perche" aria-labelledby="t-perche">
+        <div class="panel-head">
+          <div><p class="eyebrow">Perché</p><h3 id="t-perche"></h3></div>
+          <button class="btn btn-sm btn-tab" id="btn-tab-perche" type="button" aria-pressed="false" aria-controls="tab-perche">Vista tabella</button>
+        </div>
+        <p class="sub" id="perche-sub"></p>
+        <div class="chart" id="ch-perche" role="img"></div>
+        <div class="tablewrap" id="tab-perche" hidden><table>
+          <caption id="cap-perche">Effetto di ogni caratteristica sul rischio</caption>
+          <thead><tr><th scope="col">Caratteristica</th><th scope="col">Cliente</th><th scope="col">Media</th><th scope="col" class="n">Effetto</th><th scope="col" class="n">Rischio se fosse nella media</th></tr></thead>
+          <tbody id="tbody-perche"></tbody>
+        </table></div>
+        <p class="note" id="perche-nota"></p>
+      </section>
+    </div>
+
+    <div class="col col-2">
+      <section class="panel" id="sez-simili" aria-labelledby="t-simili">
+        <div class="panel-head">
+          <div><p class="eyebrow">Rispetto ai clienti simili</p><h3 id="t-simili"></h3></div>
+          <button class="btn btn-sm btn-tab" id="btn-tab-simili" type="button" aria-pressed="false" aria-controls="tab-simili">Vista tabella</button>
+        </div>
+        <p class="sub" id="simili-def"></p>
+        <div id="simili-grafico">
+          <ul class="bl-legend" id="simili-legenda">
+            <li><span class="sw-band" aria-hidden="true"></span>Metà centrale dei simili</li>
+            <li><span class="sw-med" aria-hidden="true"></span>Mediana</li>
+            <li><span class="sw-dot" aria-hidden="true"></span><span id="leg-cliente">Questo cliente</span></li>
+          </ul>
+          <div class="bullets" id="bullets"></div>
+        </div>
+        <div class="tablewrap" id="tab-simili" hidden><table>
+          <caption>Cliente e clienti simili a confronto</caption>
+          <thead><tr><th scope="col">Indicatore</th><th scope="col" class="n">Cliente</th><th scope="col" class="n">25° perc.</th><th scope="col" class="n">Mediana</th><th scope="col" class="n">75° perc.</th><th scope="col">Posizione</th></tr></thead>
+          <tbody id="tbody-simili"></tbody>
+        </table></div>
+        <p class="note"><b>Percentile:</b> il 25° percentile è il valore sotto cui sta un quarto dei clienti simili, il 75° quello sotto cui stanno tre quarti; la mediana (50°) divide il gruppo a metà.</p>
+      </section>
+    </div>
+
+    <div class="col col-3">
+      <section class="panel p-act" id="sez-azione" aria-labelledby="t-azione">
+        <div class="panel-head">
+          <div><p class="eyebrow" id="azione-eyebrow">Cosa fare adesso</p><h3 id="t-azione"></h3></div>
+          <button class="btn btn-sm" id="btn-copia" type="button" aria-label="Copia negli appunti il testo per la telefonata">Copia</button>
+        </div>
+        <p class="prio-line" id="azione-prio"></p>
+        <div id="box-attivo">
+          <ol class="actions" id="azioni"></ol>
+          <div class="script">
+            <div class="script-head"><h4>Cosa dire al telefono</h4></div>
+            <ol id="copione"></ol>
+          </div>
+        </div>
+        <div id="box-chiuso" hidden>
+          <p class="closed-motivo">Motivo di chiusura: <b id="chiuso-motivo"></b></p>
+          <h4 style="margin-top:14px;font-size:16px">Cosa avremmo potuto fare</h4>
+          <ul class="could" id="chiuso-cosa"></ul>
+        </div>
+        <p class="copy-state" id="copia-stato" aria-live="polite"></p>
+        <p class="note" id="azione-regola"></p>
+      </section>
+    </div>
+
+    <section class="panel col-full" id="sez-vicini" aria-labelledby="t-vicini">
+      <p class="eyebrow">I 5 clienti più simili</p>
+      <h3 id="t-vicini"></h3>
+      <p class="sub" id="vicini-def"></p>
+      <div class="tablewrap"><table>
+        <caption class="sr-only">I 5 clienti più simili</caption>
+        <thead><tr><th scope="col">Cliente</th><th scope="col" class="n">Età</th><th scope="col">Carta</th><th scope="col" class="n">Transazioni 12 mesi</th><th scope="col" class="n">Contatti assistenza</th><th scope="col" class="n">Prodotti</th><th scope="col">Stato</th><th scope="col">Motivo chiusura</th></tr></thead>
+        <tbody id="tbody-vicini"></tbody>
+        <tfoot><tr><td colspan="8" id="vicini-sintesi"></td></tr></tfoot>
+      </table></div>
+    </section>
+  </div>
+  <p class="sr-only" id="annuncio" aria-live="polite"></p>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <p>Banca Aurora è una banca inventata. Dati di fantasia a scopo dimostrativo.</p>
+    <p id="fonte">Fonte: Clienti_Banca_Aurora.xlsx</p>
+  </div>
+</footer>
+
+<script src="../data/clienti_banca_aurora.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.5.0/echarts.min.js"></script>
+
+<script id="calc">
+/* ================= CALCOLI (nessun accesso al DOM: verificabili in node) ================= */
+(function(root){
+'use strict';
+
+function mkNF(o){
+  var opt=Object.assign({},o,{useGrouping:'always'}), f;
+  try{ f=new Intl.NumberFormat('it-IT',opt); if(f.format(4569).indexOf('.')<0) throw 0; return function(v){return f.format(v);}; }
+  catch(e){
+    f=new Intl.NumberFormat('it-IT',o);
+    return function(v){ var s=f.format(v), neg=/^[-−]/.test(s), parts=s.replace(/^[-−]/,'').split(',');
+      parts[0]=parts[0].replace(/\./g,'').replace(/\B(?=(\d{3})+(?!\d))/g,'.'); return (neg?'-':'')+parts.join(','); };
+  }
+}
+var NF0=mkNF({maximumFractionDigits:0}), NF1=mkNF({minimumFractionDigits:1,maximumFractionDigits:1}),
+    NFM1=mkNF({maximumFractionDigits:1}), NF2=mkNF({minimumFractionDigits:2,maximumFractionDigits:2});
+var fmt={
+  int:function(v){return NF0(Math.round(v));},
+  dec1:function(v){return NF1(v);},
+  max1:function(v){return NFM1(v);},
+  dec2:function(v){return NF2(v);},
+  euro:function(v){return NF0(Math.round(v))+' €';},
+  pct1:function(p){return NF1(p*100)+'%';},
+  pct0:function(p){return NF0(Math.round(p*100))+'%';},
+  segno1:function(v){return (v>=0?'+':'−')+NF1(Math.abs(v));},
+  segno2:function(v){return (v>=0?'+':'−')+NF2(Math.abs(v));}
+};
+
+/* Fasce di rischio (ipotesi dichiarate) */
+var BANDE=[
+  {nome:'Basso',      da:0,   a:0.10, testo:'<10%', heat:'--heat-1'},
+  {nome:'Medio',      da:0.10,a:0.30, testo:'10–30%',       heat:'--heat-2'},
+  {nome:'Alto',       da:0.30,a:0.60, testo:'30–60%',       heat:'--heat-3'},
+  {nome:'Molto alto', da:0.60,a:1,    testo:'>60%', heat:'--heat-4'}
+];
+function fascia(p){ return p<0.10?0 : p<=0.30?1 : p<=0.60?2 : 3; }
+
+/* Le 7 variabili del modello, raccontate in parole */
+var FEAT={
+  n_trans_12m:{lungo:'Pagamenti negli ultimi 12 mesi', corto:'Pagamenti 12 mesi',
+    val:function(r){return fmt.int(r.n_trans_12m);}, media:function(m){return fmt.int(m);},
+    su:'pochi pagamenti con la carta', giu:'molti pagamenti con la carta'},
+  importo_12m:{lungo:'Spesa con la carta in 12 mesi', corto:'Spesa 12 mesi',
+    val:function(r){return fmt.euro(r.importo_12m);}, media:function(m){return fmt.euro(m);},
+    su:'spesa sopra la media', giu:'spesa sotto la media'},
+  mesi_inattivi:{lungo:'Mesi senza usare la carta', corto:'Mesi inattivi',
+    val:function(r){return fmt.int(r.mesi_inattivi);}, media:function(m){return fmt.dec1(m);},
+    su:'molti mesi senza usare la carta', giu:'carta usata quasi ogni mese'},
+  contatti:{lungo:'Contatti assistenza in 12 mesi', corto:'Contatti assistenza',
+    val:function(r){return fmt.int(r.contatti);}, media:function(m){return fmt.dec1(m);},
+    su:"molti contatti con l'assistenza", giu:"pochi contatti con l'assistenza"},
+  prodotti:{lungo:'Prodotti attivi con la banca', corto:'Prodotti attivi',
+    val:function(r){return fmt.int(r.prodotti);}, media:function(m){return fmt.dec1(m);},
+    su:'pochi prodotti con la banca', giu:'molti prodotti con la banca'},
+  revolving_zero:{lungo:'Pagamento a rate (revolving)', corto:'Pagamento a rate',
+    val:function(r){return r.revolving===0?'mai usato':'in uso, '+fmt.euro(r.revolving);},
+    media:function(m,r){return r&&r.revolving===0?'come il '+fmt.pct0(m)+' dei clienti':'come il '+fmt.pct0(1-m)+' dei clienti';},
+    su:'non usa mai il pagamento a rate', giu:'usa il pagamento a rate'},
+  eta:{lungo:'Età', corto:'Età',
+    val:function(r){return fmt.int(r.eta)+' anni';}, media:function(m){return fmt.int(m)+' anni';},
+    su:'età sotto la media', giu:'età sopra la media'}
+};
+function etichetta(M,k,r){
+  var f=FEAT[k], v=f.val(r), m=f.media(M.mean[k],r);
+  var val= k==='revolving_zero' ? v+' ('+m+')' : v+' (media '+m+')';
+  var valCorto= k==='revolving_zero' ? v.replace(/^in uso, .*/,'in uso')+' ('+m.replace(' dei clienti','')+')' : val;
+  return {nome:f.lungo, corto:f.corto, valore:val, valoreCorto:valCorto};
+}
+
+/* Modello: z=(x-media)/sd, logit=intercetta+Σcoef·z, rischio=1/(1+e^-logit) */
+function xv(r,k){ return k==='revolving_zero' ? (r.revolving===0?1:0) : r[k]; }
+function zeta(M,r){ var z={}; M.features.forEach(function(k){ z[k]=(xv(r,k)-M.mean[k])/M.sd[k]; }); return z; }
+function sigm(x){ return 1/(1+Math.exp(-x)); }
+function rischio(M,r){
+  var z=zeta(M,r), l=M.coef.intercetta, c={};
+  M.features.forEach(function(k){ c[k]=M.coef[k]*z[k]; l+=c[k]; });
+  return {p:sigm(l), logit:l, contrib:c, z:z};
+}
+
+function prepara(D){
+  var M=D.modello, R=D.righe, risk=new Map(), byId=new Map();
+  R.forEach(function(r){ risk.set(r.id, rischio(M,r)); byId.set(r.id,r); });
+  var attivi=R.filter(function(r){return r.stato==='Attivo';})
+              .sort(function(a,b){ return risk.get(b.id).p-risk.get(a.id).p || a.id-b.id; });
+  var nAlto=attivi.filter(function(r){return risk.get(r.id).p>0.30;}).length;
+  var nOltre50=attivi.filter(function(r){return risk.get(r.id).p>0.50;}).length;
+  var chiusi=R.length-attivi.length;
+  var mediaAttivi=attivi.reduce(function(s,r){return s+risk.get(r.id).p;},0)/attivi.length;
+  return {D:D, M:M, R:R, risk:risk, byId:byId, attivi:attivi, nAlto:nAlto, nOltre50:nOltre50,
+          chiusi:chiusi, tasso:chiusi/R.length, mediaAttivi:mediaAttivi, base:sigm(M.coef.intercetta)};
+}
+
+/* Contributi ordinati (positivi = alzano il rischio) */
+function perche(P,r){
+  var R=P.risk.get(r.id);
+  return P.M.features.map(function(k){
+    var c=R.contrib[k];
+    return {k:k, c:c, seMedia:sigm(R.logit-c), et:etichetta(P.M,k,r)};
+  }).sort(function(a,b){ return b.c-a.c; });
+}
+function driver(P,r,soglia){
+  return perche(P,r).filter(function(o){return o.c>=(soglia==null?0.2:soglia);}).slice(0,2);
+}
+
+/* Clienti simili: stessa fascia d'età (10 anni) e stessa fascia di reddito; se <15, solo fascia d'età; se ancora <15, finestra d'età allargata */
+var MIN_SIMILI=15;
+function decade(e){ return Math.floor(e/10)*10; }
+function simili(P,r){
+  var d=decade(r.eta), R=P.R, g, tipo, lo=d, hi=d+9;
+  g=R.filter(function(o){return o.id!==r.id && decade(o.eta)===d && o.reddito===r.reddito;});
+  var nStretto=g.length; tipo='eta_reddito';
+  if(g.length<MIN_SIMILI){ g=R.filter(function(o){return o.id!==r.id && decade(o.eta)===d;}); tipo='eta'; }
+  if(g.length<MIN_SIMILI){
+    for(var w=5; w<=40; w++){ lo=r.eta-w; hi=r.eta+w; g=R.filter(function(o){return o.id!==r.id && o.eta>=lo && o.eta<=hi;}); if(g.length>=MIN_SIMILI) break; }
+    tipo='finestra';
+  }
+  return {gruppo:g, tipo:tipo, lo:lo, hi:hi, nStretto:nStretto};
+}
+function quantile(s,q){ var n=s.length; if(!n) return NaN; var h=(n-1)*q, a=Math.floor(h), b=Math.ceil(h); return s[a]+(s[b]-s[a])*(h-a); }
+var IND=[
+  {k:'n_trans_12m',  nome:'Transazioni in 12 mesi',    tipo:'int',   frasi:['Fa meno pagamenti','Fa più pagamenti']},
+  {k:'importo_12m',  nome:'Spesa con la carta in 12 mesi', tipo:'euro', frasi:['Spende meno','Spende più']},
+  {k:'utilizzo',     nome:'Utilizzo del fido',          tipo:'quota', frasi:['Usa meno il fido','Usa più il fido']},
+  {k:'mesi_inattivi',nome:'Mesi senza usare la carta',  tipo:'int',   frasi:['Ha meno mesi di inattività','Ha più mesi di inattività']},
+  {k:'contatti',     nome:"Contatti con l'assistenza",  tipo:'int',   frasi:["Contatta meno l'assistenza","Contatta più spesso l'assistenza"]},
+  {k:'prodotti',     nome:'Prodotti attivi',            tipo:'int',   frasi:['Ha meno prodotti','Ha più prodotti']}
+];
+function fv(tipo,v,preciso){
+  if(tipo==='euro') return fmt.euro(v);
+  if(tipo==='quota') return preciso? fmt.pct1(v) : fmt.pct0(v);
+  return preciso? fmt.int(v) : fmt.max1(v);
+}
+function art(n){ return (n===1||n===8||n===11||(n>=80&&n<=89))?"dell'":'del '; }
+function posizione(lower,higher){
+  var L=Math.round(lower*100), H=Math.round(higher*100);
+  if(higher===1) return {txt:'Il valore più basso tra i clienti simili', verso:-1, forza:1};
+  if(lower===1)  return {txt:'Il valore più alto tra i clienti simili', verso:1, forza:1};
+  if(higher>=0.5) return {txt:'Più basso '+art(H)+H+'% dei clienti simili', verso:-1, forza:higher, n:H};
+  if(lower>=0.5)  return {txt:'Più alto '+art(L)+L+'% dei clienti simili', verso:1, forza:lower, n:L};
+  return {txt:'In linea con i simili: più alto '+art(L)+L+'%, più basso '+art(H)+H+'%', verso:0, forza:Math.max(lower,higher)};
+}
+function confronto(P,r,g){
+  return IND.map(function(ind){
+    var vals=g.map(function(o){return o[ind.k];}).sort(function(a,b){return a-b;}), v=r[ind.k], n=vals.length;
+    var lower=vals.filter(function(x){return x<v;}).length/n, higher=vals.filter(function(x){return x>v;}).length/n;
+    var o={k:ind.k, nome:ind.nome, tipo:ind.tipo, frasi:ind.frasi, v:v, n:n,
+      min:vals[0], max:vals[n-1], p25:quantile(vals,.25), p50:quantile(vals,.5), p75:quantile(vals,.75),
+      lower:lower, higher:higher};
+    o.pos=posizione(lower,higher);
+    return o;
+  });
+}
+function titoloSimili(conf){
+  var best=null;
+  conf.forEach(function(c){ if(c.pos.verso!==0 && (!best || c.pos.forza>best.pos.forza)) best=c; });
+  if(!best) return 'In linea con i clienti simili su tutti gli indicatori';
+  if(best.pos.forza===1) return best.frasi[best.pos.verso<0?0:1]+' di tutti i clienti simili';
+  return best.frasi[best.pos.verso<0?0:1]+' '+art(best.pos.n)+best.pos.n+'% dei clienti simili';
+}
+
+/* I 5 più simili: distanza sulle variabili standardizzate del modello */
+function vicini(P,r,n){
+  var z0=P.risk.get(r.id).z, F=P.M.features;
+  return P.R.filter(function(o){return o.id!==r.id;}).map(function(o){
+    var z=P.risk.get(o.id).z, s=0; F.forEach(function(k){ var d=z[k]-z0[k]; s+=d*d; });
+    return {r:o, d:Math.sqrt(s)};
+  }).sort(function(a,b){ return a.d-b.d || a.r.id-b.r.id; }).slice(0,n||5);
+}
+
+/* Durata del rapporto */
+function durata(m){
+  var a=Math.floor(m/12), mm=m%12, s=[];
+  if(a) s.push(a+' '+(a===1?'anno':'anni'));
+  if(mm) s.push(mm+' '+(mm===1?'mese':'mesi'));
+  return s.join(' e ');
+}
+function daQuanto(m){
+  var a=Math.floor(m/12), mm=m%12;
+  if(a<1) return 'da '+m+' mesi';
+  if(a===1) return mm?'da più di un anno':'da un anno';
+  return (mm?'da più di ':'da ')+a+' anni';
+}
+function civile(r){ return String(r.civile).replace('o/a', r.genere==='F'?'a':'o'); }
+
+/* Regole "Cosa fare adesso" */
+var PRIO=[
+  {t:'Nessuna azione urgente',               d:'Rischio basso: cliente stabile. Basta un saluto alla prossima occasione.'},
+  {t:'Da seguire: contatto entro il mese',    d:'Rischio medio: un contatto leggero (email, app o in filiale).'},
+  {t:'Chiamare questa settimana',             d:'Rischio alto: è nella lista dei clienti da chiamare.'},
+  {t:'Chiamare entro 48 ore',                 d:'Rischio molto alto: priorità massima della lista.'}
+];
+function testi(P,r){
+  var M=P.M, R=P.risk.get(r.id), f=fascia(R.p), F_=r.genere==='F', dr=driver(P,r), nome=r.nome;
+  var AZ={
+    n_trans_12m:{t:"Riattivare l'uso della carta", d:'Fa '+fmt.int(r.n_trans_12m)+' pagamenti in 12 mesi (media '+fmt.int(M.mean.n_trans_12m)+'). Proporre di spostare sulla carta le spese di ogni giorno: bollette, abbonamenti, spesa.'},
+    mesi_inattivi:{t:'Capire perché la carta è ferma', d:"Non l'ha usata in "+r.mesi_inattivi+' mesi su 12 (media '+fmt.dec1(M.mean.mesi_inattivi)+'). Verificare che funzioni (scaduta, bloccata, rifiutata) e ricordarne i vantaggi.'},
+    contatti:{t:'Chiudere i problemi aperti', d:"Ha contattato l'assistenza "+r.contatti+' volte in 12 mesi (media '+fmt.dec1(M.mean.contatti)+'). Chiedere se è tutto risolto e lasciare un referente diretto.'},
+    prodotti:{t:'Rafforzare il rapporto', d:'Ha '+r.prodotti+' '+(r.prodotti===1?'prodotto':'prodotti')+' con la banca (media '+fmt.dec1(M.mean.prodotti)+'). Fissare un appuntamento per capire le sue esigenze prima di proporre altro.'},
+    revolving_zero:{t:'Far conoscere le funzioni della carta', d:'Non ha mai usato il pagamento a rate. Spiegare in due parole come rateizzare un acquisto importante, senza insistere.'},
+    importo_12m:{t:'Trattenere un cliente che spende', d:'Spende '+fmt.euro(r.importo_12m)+' in 12 mesi (media '+fmt.euro(M.mean.importo_12m)+'). Ricordare i vantaggi della carta sugli acquisti importanti.'},
+    eta:{t:'Proporre i servizi digitali', d:'Ha '+r.eta+' anni, meno della media ('+fmt.int(M.mean.eta)+'). Proporre l’app e i pagamenti da smartphone.'}
+  };
+  var DOM={
+    n_trans_12m:'Ho visto che negli ultimi 12 mesi ha usato la carta per '+fmt.int(r.n_trans_12m)+' pagamenti, meno di quanto fanno di solito i nostri clienti: c’è qualcosa che non la convince?',
+    mesi_inattivi:'Ho visto che negli ultimi mesi usa poco la carta: in '+r.mesi_inattivi+' mesi su 12 non l’ha mai usata. Funziona tutto come dovrebbe?',
+    contatti:'Ho visto che quest’anno ha contattato la nostra assistenza '+r.contatti+' volte: il problema è stato risolto come voleva?',
+    prodotti:'Ho visto che con noi ha '+r.prodotti+' '+(r.prodotti===1?'prodotto':'prodotti')+': mi racconta cosa le servirebbe di più in questo periodo?',
+    revolving_zero:'Ho visto che non ha mai usato la possibilità di pagare a rate: sapeva che può farlo anche per un solo acquisto?',
+    importo_12m:'Ho visto che usa la carta anche per spese importanti, '+fmt.euro(r.importo_12m)+' negli ultimi 12 mesi: è '+(F_?'soddisfatta':'soddisfatto')+' delle condizioni che ha?',
+    eta:'Usa già la nostra app per tenere sotto controllo la carta dal telefono?'
+  };
+  var PROP={
+    n_trans_12m:'Se le va, possiamo collegare alla carta bollette e abbonamenti: così la usa senza pensarci.',
+    mesi_inattivi:'Vedo anche che in '+r.mesi_inattivi+' mesi su 12 non l’ha mai usata: se c’è un problema con la carta lo risolviamo subito, anche adesso al telefono.',
+    contatti:'Vedo che quest’anno ha chiamato l’assistenza '+r.contatti+' volte: da oggi può chiamare direttamente me, le lascio il mio numero.',
+    prodotti:'Le andrebbe di fissare un appuntamento in filiale per vedere insieme cosa possiamo fare di più per lei?',
+    revolving_zero:'Le ricordo che può pagare a rate anche un solo acquisto importante: se vuole le mando un riepilogo semplice, così decide con calma.',
+    importo_12m:'Visto che usa la carta anche per acquisti importanti ('+fmt.euro(r.importo_12m)+' in 12 mesi), le mando un riepilogo dei vantaggi che ha già incluso.',
+    eta:'Se vuole, le mando il link per attivare l’app e controllare la carta dal telefono.'
+  };
+  var apertura='Buongiorno '+nome+', sono [nome operatore] di Banca Aurora. La chiamo perché è '+(F_?'nostra':'nostro')+' cliente '+daQuanto(r.mesi_cliente)+' e ci tengo a sapere come si trova con la sua carta '+r.carta+'.';
+  var chiusura='Grazie del tempo, '+nome+': se le serve qualcosa, da oggi può chiamare direttamente me.';
+  var azioni, copione;
+  if(f===0 || !dr.length){
+    azioni=[{t:'Mantenere il rapporto', d:'Nessuna caratteristica alza il rischio in modo rilevante. Ringraziare e ricordare i servizi già attivi.'}];
+    copione=[apertura, 'Volevo ringraziarla: vedo che usa la carta con regolarità, '+fmt.int(r.n_trans_12m)+' pagamenti negli ultimi 12 mesi.', chiusura];
+  } else {
+    azioni=dr.map(function(o){ return AZ[o.k]; });
+    copione=[apertura, DOM[dr[0].k], dr[1]? PROP[dr[1].k] : chiusura];
+  }
+  var out={fascia:f, prio:PRIO[f], driver:dr, azioni:azioni, copione:copione, chiuso:null};
+  if(r.stato==='Chiuso'){
+    var MOT={
+      "Offerta migliore da un'altra banca":'Accorgersi prima del calo di utilizzo e fare un’offerta di permanenza (per esempio canone ridotto) prima che cercasse altrove.',
+      'Assistenza clienti insoddisfacente':'Dopo '+r.contatti+' contatti con l’assistenza in 12 mesi, assegnare un referente e richiamare per verificare che il problema fosse risolto.',
+      'Carta poco utilizzata / non serve più':'Intervenire ai primi mesi di inattività (qui '+r.mesi_inattivi+' su 12) con una proposta d’uso concreta: bollette, abbonamenti, spesa.',
+      'Costi e commissioni troppo alti':'Rivedere il canone o proporre la carta più adatta all’uso reale, prima della richiesta di chiusura.',
+      'Motivi personali':'Poco da fare sul prodotto: chiudere bene il rapporto e lasciare la porta aperta.'
+    };
+    var cosa=[MOT[r.motivo] || 'Ascoltare il cliente prima della chiusura e proporre un’alternativa.'];
+    var d1=driver(P,r,0.2)[0];
+    if(d1) cosa.push('Segnale nei dati: '+FEAT[d1.k].su+' ('+etichetta(M,d1.k,r).valore.replace(/ \((.*)\)$/,', $1')+'). Azione utile: '+AZ[d1.k].t.charAt(0).toLowerCase()+AZ[d1.k].t.slice(1)+'.');
+    cosa.push(R.p>0.30
+      ? 'Il modello gli assegna un rischio del '+fmt.pct1(R.p)+': sarebbe stato nella lista dei clienti da chiamare (sopra il 30%).'
+      : 'Il modello gli assegna un rischio del '+fmt.pct1(R.p)+': non sarebbe stato segnalato (sotto il 30%). Non tutti gli abbandoni si vedono nei dati.');
+    out.chiuso={motivo:r.motivo, cosa:cosa};
+  }
+  return out;
+}
+
+root.SC={fmt:fmt, BANDE:BANDE, fascia:fascia, FEAT:FEAT, IND:IND, MIN_SIMILI:MIN_SIMILI, etichetta:etichetta,
+  rischio:rischio, sigm:sigm, prepara:prepara, perche:perche, driver:driver, simili:simili, confronto:confronto,
+  titoloSimili:titoloSimili, vicini:vicini, durata:durata, daQuanto:daQuanto, civile:civile, testi:testi, fv:fv, art:art, quantile:quantile};
+})(typeof window!=='undefined'?window:globalThis);
+</script>
+
+<script>
+/* ================= INTERFACCIA ================= */
+(function(){
+'use strict';
+var html=document.documentElement;
+var D=window.BANCA_AURORA, SC=window.SC, fmt=SC.fmt;
+var THUMB=html.classList.contains('is-thumb');
+var REDUCED=!!(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+var ANIM=!THUMB&&!REDUCED;
+var HAS_EC=!!window.echarts;
+
+function $(id){ return document.getElementById(id); }
+function el(tag,cls,txt){ var e=document.createElement(tag); if(cls) e.className=cls; if(txt!=null) e.textContent=txt; return e; }
+function clear(n){ while(n.firstChild) n.removeChild(n.firstChild); }
+function tok(n){ return getComputedStyle(html).getPropertyValue(n).trim(); }
+function esc(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+
+if(!D||!SC){ return; }
+var P=SC.prepara(D);
+var cur=null, curT=null;
+
+/* ---------- Testi fissi calcolati ---------- */
+var fonteFile=String(D.meta.fonte||'').split(',')[0]||'Clienti_Banca_Aurora.xlsx';
+$('badge-dati').textContent=fmt.int(D.righe.length)+' clienti · '+fonteFile;
+$('fonte').textContent='Fonte: '+(D.meta.fonte||fonteFile)+' · '+fmt.int(D.righe.length)+' clienti.';
+
+/* ---------- Tema ---------- */
+function themeNow(){ return html.dataset.theme==='dark'?'dark':'light'; }
+function updateThemeBtn(){
+  var dark=themeNow()==='dark';
+  $('tema-txt').textContent=dark?'Tema chiaro':'Tema scuro';
+  $('btn-tema').setAttribute('aria-label', dark?'Passa al tema chiaro':'Passa al tema scuro');
+}
+$('btn-tema').addEventListener('click',function(){
+  var t=themeNow()==='dark'?'light':'dark';
+  html.dataset.theme=t;
+  try{ localStorage.setItem('ba-theme',t); }catch(e){}
+  updateThemeBtn(); drawWhy();
+});
+updateThemeBtn();
+
+/* ---------- Ricerca con suggerimenti ---------- */
+function norm(s){ return String(s).normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase().replace(/[’`]/g,"'"); }
+var IDX=D.righe.map(function(r){ var n=norm(r.nome), c=norm(r.cognome); return {r:r, n:n, c:c, w:(n+' '+c).split(/[\s']+/), id:String(r.id)}; });
+var input=$('cerca'), lista=$('cerca-lista'), opts=[], att=-1, MAXS=8;
+function cerca(q){
+  q=norm(q).trim(); if(!q) return [];
+  var toks=q.split(/\s+/);
+  var res=IDX.filter(function(o){
+    return toks.every(function(t){
+      return o.n.indexOf(t)===0 || o.c.indexOf(t)===0 || o.w.some(function(w){return w.indexOf(t)===0;}) || (/^\d+$/.test(t) && o.id.indexOf(t)>=0);
+    });
+  });
+  res.forEach(function(o){ o.s = (o.c.indexOf(q)===0?0 : (o.n+' '+o.c).indexOf(q)===0?1 : (o.c+' '+o.n).indexOf(q)===0?1 : 2); });
+  res.sort(function(a,b){ return a.s-b.s || a.c.localeCompare(b.c,'it') || a.n.localeCompare(b.n,'it'); });
+  return res.map(function(o){return o.r;});
+}
+function iniziali(r){ return (String(r.nome).charAt(0)+String(r.cognome).replace(/^[^A-Za-zÀ-ÿ]+/,'').charAt(0)).toUpperCase(); }
+function apriLista(){ lista.hidden=false; input.setAttribute('aria-expanded','true'); }
+function chiudiLista(){ lista.hidden=true; input.setAttribute('aria-expanded','false'); input.removeAttribute('aria-activedescendant'); att=-1; }
+function disegnaLista(){
+  var res=cerca(input.value); clear(lista); opts=res.slice(0,MAXS); att=opts.length?0:-1;
+  if(!input.value.trim()){ chiudiLista(); return; }
+  if(!opts.length){ var li=el('li','s-info','Nessun cliente trovato: prova con il cognome o con l’ID'); li.setAttribute('role','option'); li.setAttribute('aria-disabled','true'); li.id='opt-vuoto'; lista.appendChild(li); apriLista(); return; }
+  opts.forEach(function(r,i){
+    var li=el('li'); li.id='opt-'+i; li.setAttribute('role','option'); li.setAttribute('aria-selected', i===att?'true':'false');
+    var av=el('span','s-av',iniziali(r)); av.setAttribute('aria-hidden','true');
+    var main=el('span','s-main'); main.appendChild(el('span','s-name',r.nome+' '+r.cognome)); main.appendChild(el('span','s-id','ID '+r.id+' · '+r.eta+' anni'));
+    var right=el('span','s-right'); var b=el('span','badge sm'+(r.stato==='Chiuso'?' chiuso':''),r.stato); right.appendChild(b);
+    right.appendChild(el('span',null,'rischio '+fmt.pct1(P.risk.get(r.id).p)));
+    li.appendChild(av); li.appendChild(main); li.appendChild(right);
+    li.addEventListener('mousedown',function(ev){ ev.preventDefault(); scegli(r); });
+    lista.appendChild(li);
+  });
+  if(res.length>MAXS){ var more=el('li','s-info','Altri '+(res.length-MAXS)+' clienti: scrivi di più per restringere'); more.setAttribute('aria-hidden','true'); lista.appendChild(more); }
+  apriLista(); evidenzia();
+}
+function evidenzia(){
+  opts.forEach(function(_,i){ var li=$('opt-'+i); if(li) li.setAttribute('aria-selected', i===att?'true':'false'); });
+  if(att>=0){ input.setAttribute('aria-activedescendant','opt-'+att); var li=$('opt-'+att); if(li&&li.scrollIntoView) li.scrollIntoView({block:'nearest'}); }
+  else input.removeAttribute('aria-activedescendant');
+}
+function scegli(r){ input.value=''; chiudiLista(); mostra(r.id,{annuncia:true}); }
+input.addEventListener('input',disegnaLista);
+input.addEventListener('focus',function(){ if(input.value.trim()) disegnaLista(); });
+input.addEventListener('blur',chiudiLista);
+input.addEventListener('keydown',function(e){
+  if(e.key==='ArrowDown'){ e.preventDefault(); if(lista.hidden) disegnaLista(); else if(opts.length){ att=(att+1)%opts.length; evidenzia(); } }
+  else if(e.key==='ArrowUp'){ e.preventDefault(); if(opts.length){ att=(att-1+opts.length)%opts.length; evidenzia(); } }
+  else if(e.key==='Enter'){ if(!lista.hidden && opts.length){ e.preventDefault(); scegli(opts[att>=0?att:0]); } }
+  else if(e.key==='Escape'){ if(!lista.hidden){ e.preventDefault(); chiudiLista(); } else if(input.value){ input.value=''; } }
+});
+document.addEventListener('keydown',function(e){
+  var t=e.target, tag=t&&t.tagName;
+  if(e.key==='/' && !e.metaKey && !e.ctrlKey && !e.altKey && tag!=='INPUT' && tag!=='TEXTAREA' && !(t&&t.isContentEditable)){ e.preventDefault(); input.focus(); }
+});
+
+/* ---------- Scorrimento clienti attivi per rischio ---------- */
+function posInLista(r){
+  var i=P.attivi.indexOf(r);
+  if(i>=0) return {i:i, prev:i-1, next:i+1<P.attivi.length?i+1:-1};
+  var p=P.risk.get(r.id).p, k=P.attivi.filter(function(a){return P.risk.get(a.id).p>=p;}).length;
+  return {i:-1, prev:k-1, next:k<P.attivi.length?k:-1};
+}
+function renderNav(r){
+  var s=posInLista(r), t;
+  if(s.i<0) t='Cliente chiuso: fuori lista';
+  else if(s.i<P.nAlto) t=(s.i+1)+' di '+P.nAlto+' a rischio alto';
+  else t=(s.i+1)+' di '+P.attivi.length+' attivi (rischio fino al 30%)';
+  $('pos-lista').textContent=t;
+  $('btn-prec').disabled=s.prev<0; $('btn-succ').disabled=s.next<0;
+}
+$('btn-prec').addEventListener('click',function(){ var s=posInLista(cur); if(s.prev>=0) mostra(P.attivi[s.prev].id,{annuncia:true}); });
+$('btn-succ').addEventListener('click',function(){ var s=posInLista(cur); if(s.next>=0) mostra(P.attivi[s.next].id,{annuncia:true}); });
+
+/* ---------- Intestazione ---------- */
+function fatto(ul,k,v){ var li=el('li'); li.appendChild(el('span','k',k)); li.appendChild(el('span','v',v)); ul.appendChild(li); }
+function renderHeader(r){
+  $('cli-iniziali').textContent=iniziali(r);
+  $('cli-nome').textContent=r.nome+' '+r.cognome;
+  $('cli-id').textContent=String(r.id);
+  var b=$('cli-stato'); b.textContent=r.stato; b.className='badge'+(r.stato==='Chiuso'?' chiuso':'');
+  var u=$('cli-fatti'); clear(u);
+  fatto(u,'Età',r.eta+' anni');
+  fatto(u,'Genere',r.genere==='F'?'Donna':'Uomo');
+  fatto(u,'Stato civile',SC.civile(r));
+  fatto(u,'Carta',r.carta);
+  fatto(u,'Cliente da',SC.durata(r.mesi_cliente));
+  fatto(u,'Prodotti attivi',String(r.prodotti));
+  var u2=$('cli-fatti2'); clear(u2);
+  fatto(u2,'Reddito',r.reddito);
+  fatto(u2,'Titolo di studio',r.studio);
+  fatto(u2,'Persone a carico',String(r.carico));
+  fatto(u2,'Fido mensile',fmt.euro(r.limite));
+  fatto(u2,'Utilizzo fido',fmt.pct1(r.utilizzo));
+  fatto(u2,'Saldo a rate',r.revolving===0?'nessuno':fmt.euro(r.revolving));
+}
+
+/* ---------- Rischio ---------- */
+(function costruisciBarra(){
+  var bar=$('rischio-barra'), tk=$('rischio-tacche'), lg=$('rischio-legenda');
+  SC.BANDE.forEach(function(b,i){
+    var s=el('div','seg'); s.style.width=((b.a-b.da)*100)+'%'; s.style.background='var('+b.heat+')'; bar.appendChild(s);
+    var li=el('li'); li.id='fascia-'+i; var sw=el('span','sw'); sw.style.background='var('+b.heat+')'; sw.setAttribute('aria-hidden','true');
+    li.appendChild(sw); li.appendChild(document.createTextNode(b.nome+' '+b.testo)); lg.appendChild(li);
+  });
+  var mk=el('div','mk'); mk.id='rischio-indice'; bar.appendChild(mk);
+  var cuts=[0].concat(SC.BANDE.map(function(b){return b.a;}));
+  cuts.forEach(function(c){ var s=el('span',null,fmt.int(c*100)+'%'); s.style.left=(c*100)+'%'; tk.appendChild(s); });
+})();
+function renderRischio(r){
+  var R=P.risk.get(r.id), f=SC.fascia(R.p), B=SC.BANDE[f], s=posInLista(r);
+  $('rischio-num').textContent=fmt.pct1(R.p);
+  $('rischio-fascia').textContent='Rischio '+B.nome.toLowerCase();
+  $('rischio-indice').style.left=(Math.min(1,Math.max(0,R.p))*100)+'%';
+  $('rischio-barra').setAttribute('aria-label','Rischio di abbandono '+fmt.pct1(R.p)+': fascia '+B.nome+', '+B.testo);
+  SC.BANDE.forEach(function(_,i){ $('fascia-'+i).className= i===f?'on':''; });
+  var t;
+  if(r.stato==='Chiuso'){
+    t='Rischio '+B.nome.toLowerCase()+' ('+fmt.pct1(R.p)+'): il cliente ha già chiuso la carta';
+    $('rischio-pos').textContent='Serve a capire se la chiusura si poteva prevedere. Media dei clienti attivi: '+fmt.pct1(P.mediaAttivi)+'.';
+  } else {
+    t=s.i===0?'È il cliente attivo più a rischio su '+P.attivi.length:'È il '+(s.i+1)+'° cliente più a rischio su '+P.attivi.length+' attivi';
+    $('rischio-pos').textContent='Media dei clienti attivi: '+fmt.pct1(P.mediaAttivi)+'. Per confronto, ha chiuso la carta il '+fmt.pct1(P.tasso)+' dei '+fmt.int(P.R.length)+' clienti.';
+  }
+  $('t-rischio').textContent=t;
+  $('rischio-nota').textContent='Probabilità stimata che chiuda la carta. Modello dimostrativo (regressione logistica sui '+fmt.int(P.R.length)+' clienti): AUC '+fmt.dec2(P.M.auc)+', misurata sugli stessi dati. AUC = quanto distingue chi chiude da chi resta (1 = sempre, 0,5 = a caso).';
+}
+
+/* ---------- Perché (ECharts) ---------- */
+var chWhy=null, whyNarrow=null, whyRows=[];
+function drawWhy(){
+  if(!cur) return;
+  var r=cur, rows=SC.perche(P,r); whyRows=rows;
+  var R=P.risk.get(r.id);
+  // titolo e testi
+  var pos=rows.filter(function(o){return o.c>=0.15;}), neg=rows.filter(function(o){return o.c<=-0.15;}).reverse();
+  var t;
+  if(pos.length) t='Pesa di più: '+SC.FEAT[pos[0].k].su+(pos[1]?' e '+SC.FEAT[pos[1].k].su:'');
+  else if(neg.length) t='Lo tengono basso: '+SC.FEAT[neg[0].k].giu+(neg[1]?' e '+SC.FEAT[neg[1].k].giu:'');
+  else t='Nessuna caratteristica sposta molto il rischio';
+  $('t-perche').textContent=t;
+  $('perche-sub').textContent='Si parte dal rischio di un cliente medio ('+fmt.pct1(P.base)+'). Ogni barra mostra quanto una caratteristica di '+r.nome+' lo sposta: ▲ rossa lo alza, ▼ verde lo abbassa.';
+  $('perche-nota').textContent='Contributo = coefficiente del modello × distanza dalla media. Pagamenti e spesa vanno letti insieme: a parità di numero di pagamenti, il modello lega una spesa più alta a un rischio più alto, per questo le due barre spesso si compensano.';
+  // tabella
+  var tb=$('tbody-perche'); clear(tb);
+  rows.forEach(function(o){
+    var tr=el('tr'), parts=o.et.valore.match(/^(.*?) \((.*)\)$/)||[null,o.et.valore,''];
+    tr.appendChild(el('th',null,o.et.nome)); tr.firstChild.setAttribute('scope','row');
+    tr.appendChild(el('td',null,parts[1])); tr.appendChild(el('td',null,parts[2].replace(/^media /,'')));
+    tr.appendChild(el('td','n nw',(o.c>=0?'▲ ':'▼ ')+fmt.segno2(o.c)));
+    tr.appendChild(el('td','n',fmt.pct1(o.seMedia)));
+    tb.appendChild(tr);
+  });
+  $('cap-perche').textContent='Effetto sul rischio di '+r.nome+' '+r.cognome+' (rischio attuale '+fmt.pct1(R.p)+')';
+  var box=$('ch-perche');
+  box.setAttribute('aria-label','Grafico a barre: '+rows.map(function(o){return o.et.nome+' '+(o.c>=0?'alza':'abbassa')+' il rischio di '+fmt.dec2(Math.abs(o.c));}).join('; '));
+  if(!HAS_EC){ return; }
+  if(!chWhy){
+    chWhy=echarts.init(box,null,{renderer:'svg'});
+    if(window.ResizeObserver){ new ResizeObserver(function(){ if(!chWhy) return; var n=box.clientWidth<460; if(n!==whyNarrow) drawWhy(); else chWhy.resize(); }).observe(box); }
+  }
+  chWhy.resize();
+  var w=box.clientWidth||600, narrow=w<460; whyNarrow=narrow;
+  var ink=tok('--ink'), ink2=tok('--ink-2'), line=tok('--line'), bad=tok('--bad'), good=tok('--good'), surf=tok('--surface'), surf2=tok('--surface-2');
+  var pmax=0, nmax=0; rows.forEach(function(o){ pmax=Math.max(pmax,o.c); nmax=Math.max(nmax,-o.c); });
+  function arr(v){ return Math.max(1,Math.ceil(v*1.3*2)/2); }
+  var xmax=arr(pmax), xmin=-arr(nmax), span=xmax-xmin;
+  if(span>=4){ xmax=Math.ceil(xmax); xmin=Math.floor(xmin); span=xmax-xmin; }
+  var top3=rows.map(function(o,i){return {i:i,a:Math.abs(o.c)};}).sort(function(a,b){return b.a-a.a;}).slice(0,3).map(function(o){return o.i;});
+  var cats=rows.map(function(o){ return narrow ? '{n|'+o.et.corto+':} {v|'+o.et.valoreCorto+'}' : '{n|'+o.et.nome+':}\n{v|'+o.et.valore+'}'; });
+  var font='"IBM Plex Sans", system-ui, sans-serif';
+  chWhy.setOption({
+    animation:ANIM, animationDuration:350, animationDurationUpdate:350,
+    textStyle:{fontFamily:font, color:ink2},
+    legend:{show:true, top:0, left:0, selectedMode:false, itemWidth:14, itemHeight:10, itemGap:18,
+      textStyle:{color:ink, fontSize:14, fontFamily:font}, data:['▲ Alza il rischio','▼ Lo abbassa']},
+    grid:narrow?{left:6, right:50, top:44, bottom:50, containLabel:false}:{left:4, right:56, top:40, bottom:46, containLabel:true},
+    xAxis:{type:'value', min:xmin, max:xmax, interval:span>=4?1:0.5,
+      splitLine:{lineStyle:{color:line, width:1, type:'solid'}}, axisLine:{show:false}, axisTick:{show:false},
+      axisLabel:{color:ink2, fontSize:12, fontFamily:font, formatter:function(v){ return v===0?'0':(v>0?'+':'−')+fmt.max1(Math.abs(v)); }},
+      name:'◀ abbassa il rischio      alza il rischio ▶', nameLocation:'middle', nameGap:28, nameTextStyle:{color:ink2, fontSize:12, fontFamily:font}},
+    yAxis:{type:'category', inverse:true, data:cats, z:narrow?12:0, axisTick:{show:false}, axisLine:{show:false, onZero:false},
+      axisLabel:narrow?{inside:true, margin:0, align:'left', verticalAlign:'bottom', padding:[0,0,15,0], fontFamily:font,
+        rich:{n:{color:ink, fontSize:13, fontWeight:600, lineHeight:18, fontFamily:font, backgroundColor:surf, padding:[0,0,0,2]}, v:{color:ink2, fontSize:13, lineHeight:18, fontFamily:font, backgroundColor:surf, padding:[0,3,0,0]}}}
+      :{margin:14, fontFamily:font, align:'right',
+        rich:{n:{color:ink, fontSize:14, fontWeight:600, lineHeight:19, fontFamily:font, align:'right'},
+              v:{color:ink2, fontSize:13, lineHeight:18, fontFamily:font, align:'right'}}}},
+    tooltip:{show:!THUMB, trigger:'axis', axisPointer:{type:'shadow', shadowStyle:{color:surf2, opacity:.7}},
+      backgroundColor:surf, borderColor:line, borderWidth:1, padding:[8,12],
+      textStyle:{color:ink, fontSize:14, fontFamily:font}, extraCssText:'box-shadow:0 8px 24px color-mix(in srgb, var(--ink) 18%, transparent);border-radius:8px;max-width:320px;white-space:normal;',
+      formatter:function(ps){
+        var i=ps&&ps[0]?ps[0].dataIndex:0, o=whyRows[i]; if(!o) return '';
+        return '<b>'+(o.c>=0?'▲ ':'▼ ')+esc(fmt.segno2(o.c))+'</b> '+(o.c>=0?'alza':'abbassa')+' il rischio<br>'+esc(o.et.nome)+': '+esc(o.et.valore)+
+               '<br>Se fosse nella media: rischio '+esc(fmt.pct1(o.seMedia))+' (ora '+esc(fmt.pct1(P.risk.get(cur.id).p))+')';
+      }},
+    series:[
+      {name:'▲ Alza il rischio', type:'bar', stack:'c', z:narrow?1:2, barMaxWidth:narrow?18:24, itemStyle:{color:bad},
+        data:rows.map(function(o){ return o.c>0?{value:o.c, itemStyle:{color:bad, borderRadius:[0,4,4,0]}}:'-'; }),
+        label:{show:true, position:'right', color:ink, fontSize:13, fontWeight:600, fontFamily:font,
+          formatter:function(p){ return top3.indexOf(p.dataIndex)>=0 ? '▲ '+fmt.segno1(p.value) : ''; }},
+        markLine:{silent:true, symbol:'none', label:{show:false}, lineStyle:{color:ink2, width:1.5, type:'solid'}, data:narrow?[]:[{xAxis:0}], animation:false}},
+      {name:'▼ Lo abbassa', type:'bar', stack:'c', z:narrow?1:2, barMaxWidth:narrow?18:24, itemStyle:{color:good},
+        data:rows.map(function(o){ return o.c<0?{value:o.c, itemStyle:{color:good, borderRadius:[4,0,0,4]}}:'-'; }),
+        label:{show:true, position:'left', color:ink, fontSize:13, fontWeight:600, fontFamily:font,
+          formatter:function(p){ return top3.indexOf(p.dataIndex)>=0 ? '▼ '+fmt.segno1(p.value) : ''; }}}
+    ]
+  }, true);
+}
+
+/* ---------- Clienti simili (bullet chart in HTML) ---------- */
+function renderSimili(r){
+  var S=SC.simili(P,r), g=S.gruppo, conf=SC.confronto(P,r,g), def=$('simili-def'); clear(def);
+  var txt;
+  var dec=Math.floor(r.eta/10)*10;
+  if(S.tipo==='eta_reddito') txt='Simili = i '+g.length+' clienti di '+dec+'–'+(dec+9)+' anni con reddito «'+r.reddito+'» (attivi e chiusi).';
+  else if(S.tipo==='eta') txt='Simili = i '+g.length+' clienti di '+dec+'–'+(dec+9)+' anni. Con lo stesso reddito erano solo '+S.nStretto+' (meno di '+SC.MIN_SIMILI+'): gruppo allargato alla sola fascia d’età.';
+  else txt='Simili = i '+g.length+' clienti tra '+S.lo+' e '+S.hi+' anni. Nella fascia '+dec+'–'+(dec+9)+' anni erano meno di '+SC.MIN_SIMILI+': gruppo allargato agli anni vicini.';
+  def.appendChild(document.createTextNode(txt));
+  if(g.length<20){ def.appendChild(el('span','flag','campione piccolo, n='+g.length)); }
+  $('t-simili').textContent=SC.titoloSimili(conf);
+  var chiuso=r.stato==='Chiuso';
+  $('simili-grafico').className=chiuso?'is-chiuso':'';
+  $('leg-cliente').textContent=r.nome+' '+r.cognome+(chiuso?' (chiuso)':'');
+  var box=$('bullets'); clear(box);
+  conf.forEach(function(c){
+    var lo=Math.min(c.min,c.v), hi=Math.max(c.max,c.v), span=hi-lo||1;
+    function pos(x){ return ((x-lo)/span*100); }
+    var row=el('div','bl-row'); row.id='bl-'+c.k;
+    var head=el('div','bl-head'); head.appendChild(el('span','bl-name',c.nome)); head.appendChild(el('span','bl-val',SC.fv(c.tipo,c.v,true)));
+    var plot=el('div','bl-plot');
+    var tr=el('div','bl-track'); tr.setAttribute('role','img');
+    tr.setAttribute('aria-label',c.nome+': cliente '+SC.fv(c.tipo,c.v,true)+'; metà centrale dei simili da '+SC.fv(c.tipo,c.p25)+' a '+SC.fv(c.tipo,c.p75)+'; mediana '+SC.fv(c.tipo,c.p50)+'.');
+    var band=el('div','bl-band'); band.style.left=pos(c.p25)+'%'; band.style.width=(pos(c.p75)-pos(c.p25))+'%';
+    var med=el('div','bl-med'); med.style.left=pos(c.p50)+'%';
+    var dot=el('div','bl-dot'); dot.style.left=pos(c.v)+'%';
+    tr.appendChild(band); tr.appendChild(med); tr.appendChild(dot);
+    var mn=el('span','bl-min',SC.fv(c.tipo,lo)), mxs=el('span','bl-max',SC.fv(c.tipo,hi));
+    mn.setAttribute('aria-hidden','true'); mxs.setAttribute('aria-hidden','true');
+    plot.appendChild(mn); plot.appendChild(tr); plot.appendChild(mxs);
+    var p=el('p','bl-txt'); p.appendChild(el('b',null,c.pos.txt)); p.appendChild(document.createTextNode(' · mediana '+SC.fv(c.tipo,c.p50)));
+    row.appendChild(head); row.appendChild(plot); row.appendChild(p);
+    box.appendChild(row);
+  });
+  var tb=$('tbody-simili'); clear(tb);
+  conf.forEach(function(c){
+    var tr=el('tr'), th=el('th',null,c.nome); th.setAttribute('scope','row'); tr.appendChild(th);
+    tr.appendChild(el('td','n nw',SC.fv(c.tipo,c.v,true)));
+    tr.appendChild(el('td','n nw',SC.fv(c.tipo,c.p25)));
+    tr.appendChild(el('td','n nw',SC.fv(c.tipo,c.p50)));
+    tr.appendChild(el('td','n nw',SC.fv(c.tipo,c.p75)));
+    tr.appendChild(el('td',null,c.pos.txt));
+    tb.appendChild(tr);
+  });
+  return {S:S, conf:conf};
+}
+
+/* ---------- I 5 più simili ---------- */
+function renderVicini(r){
+  var V=SC.vicini(P,r,5), tb=$('tbody-vicini'); clear(tb);
+  var vd=$('vicini-def'); clear(vd);
+  vd.appendChild(document.createTextNode('Somiglianza misurata sulle '+P.M.features.length+' caratteristiche usate dal modello (pagamenti, spesa, mesi inattivi, contatti, prodotti, pagamento a rate, età), messe sulla stessa scala. '));
+  vd.appendChild(el('span','screen-only','Clicca un nome per aprirne la scheda.'));
+  V.forEach(function(o,i){
+    var x=o.r, tr=el('tr'), td=el('td');
+    var b=el('button','linkbtn',x.nome+' '+x.cognome); b.type='button'; b.id='vicino-'+(i+1);
+    b.setAttribute('aria-label','Apri la scheda di '+x.nome+' '+x.cognome);
+    b.addEventListener('click',function(){ mostra(x.id,{annuncia:true, focus:true}); });
+    td.appendChild(b); td.appendChild(el('span','td-id','ID '+x.id)); tr.appendChild(td);
+    tr.appendChild(el('td','n',String(x.eta)));
+    tr.appendChild(el('td',null,x.carta));
+    tr.appendChild(el('td','n',fmt.int(x.n_trans_12m)));
+    tr.appendChild(el('td','n',String(x.contatti)));
+    tr.appendChild(el('td','n',String(x.prodotti)));
+    var ts=el('td'); ts.appendChild(el('span','badge sm'+(x.stato==='Chiuso'?' chiuso':''),x.stato)); tr.appendChild(ts);
+    tr.appendChild(el('td',null,x.motivo||'—'));
+    tb.appendChild(tr);
+  });
+  var ch=V.filter(function(o){return o.r.stato==='Chiuso';}), k=ch.length, n=V.length;
+  var t= k===0 ? 'Nessuno dei '+n+' clienti più simili ha chiuso la carta'
+       : k===1 ? '1 su '+n+' dei clienti più simili ha chiuso la carta'
+       : k+' su '+n+' dei clienti più simili hanno chiuso la carta';
+  $('t-vicini').textContent=t;
+  var s=$('vicini-sintesi'); clear(s);
+  s.appendChild(el('b',null, k===0?'0 su '+n+' hanno chiuso la carta':(k+' su '+n+(k===1?' ha':' hanno')+' chiuso la carta')));
+  var mot={}; ch.forEach(function(o){ mot[o.r.motivo]=(mot[o.r.motivo]||0)+1; });
+  var ml=Object.keys(mot).sort(function(a,b){return mot[b]-mot[a]||a.localeCompare(b,'it');}).map(function(m){return m+' ('+mot[m]+')';});
+  s.appendChild(document.createTextNode((ml.length?' · motivi: '+ml.join(', '):'')+' · su tutti i clienti chiude il '+fmt.pct1(P.tasso)+'.'));
+  return V;
+}
+
+/* ---------- Cosa fare adesso ---------- */
+function renderAzione(r){
+  var T=SC.testi(P,r), chiuso=r.stato==='Chiuso';
+  $('box-attivo').hidden=chiuso; $('box-chiuso').hidden=!chiuso;
+  $('copia-stato').textContent='';
+  if(chiuso){
+    $('azione-eyebrow').textContent='Cliente chiuso';
+    $('t-azione').textContent='Ha già chiuso: cosa avremmo potuto fare';
+    $('azione-prio').textContent='Il motivo arriva dalle note del call center; i segnali dai dati del cliente.';
+    $('chiuso-motivo').textContent=T.chiuso.motivo||'non registrato';
+    var u=$('chiuso-cosa'); clear(u); T.chiuso.cosa.forEach(function(c){ u.appendChild(el('li',null,c)); });
+    $('btn-copia').setAttribute('aria-label','Copia negli appunti motivo e cosa avremmo potuto fare');
+    $('azione-regola').textContent='Regola: il primo punto dipende dal motivo di chiusura, il secondo dalla caratteristica che alza di più il rischio.';
+  } else {
+    $('azione-eyebrow').textContent='Cosa fare adesso';
+    $('t-azione').textContent=T.prio.t+(T.driver.length?': '+T.azioni[0].t.charAt(0).toLowerCase()+T.azioni[0].t.slice(1):'');
+    $('azione-prio').textContent=T.prio.d;
+    var ol=$('azioni'); clear(ol);
+    T.azioni.forEach(function(a){ var li=el('li'); li.appendChild(el('strong',null,a.t)); li.appendChild(el('span',null,a.d)); ol.appendChild(li); });
+    var cp=$('copione'); clear(cp);
+    var chi=['Apertura','Domanda','Proposta'];
+    T.copione.forEach(function(f,i){ var li=el('li'); li.appendChild(el('span','who-says',chi[i])); li.appendChild(document.createTextNode('«'+f+'»')); cp.appendChild(li); });
+    $('btn-copia').setAttribute('aria-label','Copia negli appunti il testo per la telefonata');
+    $('azione-regola').textContent='Regola: la priorità dipende dalla fascia di rischio; le azioni dalle '+(T.driver.length||2)+' caratteristiche che alzano di più il rischio (barre rosse del «Perché»).';
+  }
+  curT=T;
+}
+function testoCopia(){
+  var r=cur, T=curT, L=[];
+  L.push('Banca Aurora · Scheda cliente: '+r.nome+' '+r.cognome+' (ID '+r.id+')');
+  L.push('Rischio di abbandono: '+fmt.pct1(P.risk.get(r.id).p)+' ('+SC.BANDE[T.fascia].nome+')');
+  if(T.chiuso){
+    L.push('Motivo di chiusura: '+(T.chiuso.motivo||'non registrato')); L.push('Cosa avremmo potuto fare:');
+    T.chiuso.cosa.forEach(function(c){ L.push('- '+c); });
+  } else {
+    L.push('Priorità: '+T.prio.t); T.azioni.forEach(function(a,i){ L.push((i+1)+'. '+a.t+' — '+a.d); });
+    L.push(''); L.push('Cosa dire al telefono:'); T.copione.forEach(function(f){ L.push('«'+f+'»'); });
+  }
+  return L.join('\n');
+}
+function copiaFallback(t){
+  var ta=document.createElement('textarea'); ta.value=t; ta.setAttribute('readonly','');
+  ta.style.position='fixed'; ta.style.top='0'; ta.style.left='0'; ta.style.opacity='0';
+  document.body.appendChild(ta); ta.select(); var ok=false; try{ ok=document.execCommand('copy'); }catch(e){} document.body.removeChild(ta); return ok;
+}
+$('btn-copia').addEventListener('click',function(){
+  var t=testoCopia(), st=$('copia-stato');
+  function fatto(ok){ st.textContent= ok?'Copiato negli appunti.':'Copia non riuscita: seleziona il testo e usa Cmd+C.'; }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(t).then(function(){fatto(true);},function(){fatto(copiaFallback(t));});
+  } else fatto(copiaFallback(t));
+});
+
+/* ---------- Scarica CSV ---------- */
+function csvCell(v){ v=v==null?'':String(v); return /[";\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+$('btn-csv').addEventListener('click',function(){
+  var r=cur, R=P.risk.get(r.id), T=curT, rows=[['Sezione','Voce','Valore']];
+  function add(a,b,c){ rows.push([a,b,c]); }
+  add('Cliente','ID',r.id); add('Cliente','Nome',r.nome+' '+r.cognome); add('Cliente','Età',r.eta);
+  add('Cliente','Genere',r.genere==='F'?'Donna':'Uomo'); add('Cliente','Stato civile',SC.civile(r)); add('Cliente','Carta',r.carta);
+  add('Cliente','Cliente da',SC.durata(r.mesi_cliente)); add('Cliente','Prodotti attivi',r.prodotti); add('Cliente','Stato',r.stato);
+  if(r.motivo) add('Cliente','Motivo chiusura',r.motivo);
+  add('Rischio','Rischio di abbandono',fmt.pct1(R.p)); add('Rischio','Fascia',SC.BANDE[SC.fascia(R.p)].nome);
+  SC.perche(P,r).forEach(function(o){ add('Perché',o.et.nome+': '+o.et.valore,fmt.segno2(o.c)); });
+  var S=SC.simili(P,r), conf=SC.confronto(P,r,S.gruppo);
+  add('Clienti simili','Numero di clienti simili',S.gruppo.length);
+  conf.forEach(function(c){ add('Clienti simili',c.nome,'cliente '+SC.fv(c.tipo,c.v,true)+' · mediana '+SC.fv(c.tipo,c.p50)+' · '+c.pos.txt); });
+  SC.vicini(P,r,5).forEach(function(o,i){ add('5 più simili',(i+1)+'. '+o.r.nome+' '+o.r.cognome+' (ID '+o.r.id+')',o.r.stato+(o.r.motivo?' – '+o.r.motivo:'')); });
+  if(T.chiuso){ T.chiuso.cosa.forEach(function(c,i){ add('Cosa avremmo potuto fare',String(i+1),c); }); }
+  else {
+    add('Cosa fare','Priorità',T.prio.t);
+    T.azioni.forEach(function(a,i){ add('Cosa fare','Azione '+(i+1),a.t+' — '+a.d); });
+    T.copione.forEach(function(f,i){ add('Cosa dire al telefono','Frase '+(i+1),f); });
+  }
+  var txt='﻿'+rows.map(function(rw){return rw.map(csvCell).join(';');}).join('\r\n');
+  var blob=new Blob([txt],{type:'text/csv;charset=utf-8'}), url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url; a.download='scheda_cliente_'+r.id+'.csv'; document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); document.body.removeChild(a); },0);
+});
+
+/* ---------- Vista tabella ---------- */
+function toggle(btnId,tabId,chartId,after){
+  var b=$(btnId);
+  b.addEventListener('click',function(){
+    var on=b.getAttribute('aria-pressed')!=='true';
+    b.setAttribute('aria-pressed',on?'true':'false'); b.textContent=on?'Vista grafico':'Vista tabella';
+    $(tabId).hidden=!on; $(chartId).hidden=on;
+    if(!on && after) after();
+  });
+}
+toggle('btn-tab-perche','tab-perche','ch-perche',function(){ if(chWhy) chWhy.resize(); });
+toggle('btn-tab-simili','tab-simili','simili-grafico');
+if(!HAS_EC){ // senza libreria grafici: mostra direttamente la tabella
+  $('ch-perche').hidden=true; $('tab-perche').hidden=false; $('btn-tab-perche').hidden=true;
+}
+
+/* ---------- Mostra un cliente ---------- */
+function mostra(id,opt){
+  opt=opt||{};
+  var r=P.byId.get(id); if(!r) return;
+  cur=r;
+  renderNav(r); renderHeader(r); renderRischio(r); drawWhy(); renderSimili(r); renderVicini(r); renderAzione(r);
+  if(opt.annuncia){ $('annuncio').textContent='Scheda di '+r.nome+' '+r.cognome+': rischio '+fmt.pct1(P.risk.get(r.id).p)+', '+SC.BANDE[SC.fascia(P.risk.get(r.id).p)].nome.toLowerCase()+'.'; }
+  if(opt.focus){
+    var h=$('cli-nome'); var top=$('sez-cliente').getBoundingClientRect().top+window.pageYOffset-12;
+    window.scrollTo({top:Math.max(0,top), behavior:REDUCED?'auto':'smooth'});
+    try{ h.focus({preventScroll:true}); }catch(e){ h.focus(); }
+  }
+}
+
+/* ---------- Stampa: grafici sempre in tema chiaro ---------- */
+var temaPrima=null;
+function prePrint(){
+  if(temaPrima!==null) return;
+  temaPrima=html.dataset.theme; html.dataset.theme='light';
+  $('stampa-info').textContent='Scheda cliente · Banca Aurora · '+cur.nome+' '+cur.cognome+' · stampata il '+new Date().toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});
+  drawWhy(); if(chWhy) chWhy.resize({width:680});
+}
+function postPrint(){
+  if(temaPrima===null) return;
+  html.dataset.theme=temaPrima; temaPrima=null; drawWhy(); if(chWhy) chWhy.resize();
+}
+window.addEventListener('beforeprint',prePrint);
+window.addEventListener('afterprint',postPrint);
+
+/* ---------- Avvio: il cliente attivo con il rischio più alto ---------- */
+mostra(P.attivi[0].id);
+})();
+</script>
+</body>
+</html>
